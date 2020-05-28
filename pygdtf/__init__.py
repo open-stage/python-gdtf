@@ -110,6 +110,17 @@ class FixtureType:
         xrevisions = self._root.find('Revisions').findall('Revision')
         self.revisions = [Revision(i) for i in xrevisions]
 
+    def get_geometry_by_type(self, geometry_type):
+        """Recursively find all geometries of a given type"""
+        def iterate_geometries(collector):
+            for g in collector.geometries:
+                if g.geometry_type == geometry_type:
+                    matched.append(g)
+                iterate_geometries(g)
+        matched = []
+        iterate_geometries(self)
+        return matched
+
 
 class ActivationGroup:
 
