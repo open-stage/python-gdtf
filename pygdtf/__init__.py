@@ -331,7 +331,10 @@ class DmxChannel:
 
     def __init__(self, XDMXChannel):
         self.dmx_break = int(XDMXChannel.get('DMXBreak'))
-        self.offset = [int(i) for i in XDMXChannel.get('Offset').split(',')]
+        try:
+            self.offset = [int(i) for i in XDMXChannel.get('Offset').split(',')]
+        except ValueError:
+            self.offset = None
         self.default = DmxValue(XDMXChannel.get('Default', default='0/1'))
         self.highlight = DmxValue(XDMXChannel.get('Highlight'))
         self.geometry = XDMXChannel.get('Geometry')
