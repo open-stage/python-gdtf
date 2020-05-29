@@ -1,4 +1,5 @@
 from xml.etree import ElementTree
+import zipfile
 
 
 class DmxAddress:
@@ -66,7 +67,10 @@ class Matrix:
 class FixtureType:
 
     def __init__(self, path):
-        self._root = ElementTree.parse(path).getroot().find('FixtureType')
+        self._package = zipfile.ZipFile(path, 'r')
+        with self._package.open('description.xml', 'r') as f:
+            description_str = f.read()
+        self._root = ElementTree.fromstring(description_str).find('FixtureType')
         self.name = self._root.get('Name')
         self.short_name = self._root.get('ShortName')
         self.long_name = self._root.get('LongName')
