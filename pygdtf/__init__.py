@@ -2,19 +2,19 @@ from typing import List
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 import zipfile
-import pygdtf.type
+import pygdtf.value
 
 
 # Standard predefined colour spaces: R, G, B, W-P
-COLOR_SPACE_SRGB = pygdtf.type.ColorSpaceDefinition(
-    pygdtf.type.ColorCIE(0.6400, 0.3300, 0.2126), pygdtf.type.ColorCIE(0.3000, 0.6000, 0.7152),
-    pygdtf.type.ColorCIE(0.1500, 0.0600, 0.0722), pygdtf.type.ColorCIE(0.3127, 0.3290, 1.0000))
-COLOR_SPACE_PROPHOTO = pygdtf.type.ColorSpaceDefinition(
-    pygdtf.type.ColorCIE(0.7347, 0.2653), pygdtf.type.ColorCIE(0.1596, 0.8404),
-    pygdtf.type.ColorCIE(0.0366, 0.0001), pygdtf.type.ColorCIE(0.3457, 0.3585))
-COLOR_SPACE_ANSI = pygdtf.type.ColorSpaceDefinition(
-    pygdtf.type.ColorCIE(0.7347, 0.2653), pygdtf.type.ColorCIE(0.1596, 0.8404),
-    pygdtf.type.ColorCIE(0.0366, 0.001), pygdtf.type.ColorCIE(0.4254, 0.4044))
+COLOR_SPACE_SRGB = pygdtf.value.ColorSpaceDefinition(
+    pygdtf.value.ColorCIE(0.6400, 0.3300, 0.2126), pygdtf.value.ColorCIE(0.3000, 0.6000, 0.7152),
+    pygdtf.value.ColorCIE(0.1500, 0.0600, 0.0722), pygdtf.value.ColorCIE(0.3127, 0.3290, 1.0000))
+COLOR_SPACE_PROPHOTO = pygdtf.value.ColorSpaceDefinition(
+    pygdtf.value.ColorCIE(0.7347, 0.2653), pygdtf.value.ColorCIE(0.1596, 0.8404),
+    pygdtf.value.ColorCIE(0.0366, 0.0001), pygdtf.value.ColorCIE(0.3457, 0.3585))
+COLOR_SPACE_ANSI = pygdtf.value.ColorSpaceDefinition(
+    pygdtf.value.ColorCIE(0.7347, 0.2653), pygdtf.value.ColorCIE(0.1596, 0.8404),
+    pygdtf.value.ColorCIE(0.0366, 0.001), pygdtf.value.ColorCIE(0.4254, 0.4044))
 
 
 def _find_root(pkg: 'zipfile.ZipFile') -> 'ElementTree.Element':
@@ -92,11 +92,11 @@ class FixtureType:
         xrevisions = self._root.find('Revisions').findall('Revision')
         self.revisions = [Revision(xml_node=i) for i in xrevisions]
 
-    def get_geometry_by_type(self, geometry_type):
+    def get_geometry_by_type(self, geometry_class):
         """Recursively find all geometries of a given type"""
         def iterate_geometries(collector):
             for g in collector.geometries:
-                if g.geometry_type == geometry_type:
+                if type(g) == geometry_class:
                     matched.append(g)
                 iterate_geometries(g)
         matched = []
@@ -156,7 +156,7 @@ class Attribute(BaseNode):
 
     def __init__(self, name: str = None, pretty: str = None,
                  activation_group: 'NodeLink' = None, feature: 'NodeLink' = None,
-                 main_attribute: 'NodeLink' = None, physical_unit: 'PhysicalUnit' = pygdtf.type.PhysicalUnit(None),
+                 main_attribute: 'NodeLink' = None, physical_unit: 'PhysicalUnit' = pygdtf.value.PhysicalUnit(None),
                  color: 'ColorCIE' = None, *args, **kwargs):
         self.name = name
         self.pretty = pretty
@@ -170,11 +170,11 @@ class Attribute(BaseNode):
     def _read_xml(self, xml_node: 'Element'):
         self.name = xml_node.get('Name')
         self.pretty = xml_node.get('Pretty')
-        self.activation_group = pygdtf.type.NodeLink('ActivationGroups', xml_node.get('ActivationGroup'))
-        self.feature = pygdtf.type.NodeLink('FeatureGroups', xml_node.get('Feature'))
-        self.main_attribute = pygdtf.type.NodeLink('Attribute', xml_node.get('MainAttribute'))
-        self.physical_unit = pygdtf.type.PhysicalUnit(xml_node.get('PhysicalUnit'))
-        self.color = pygdtf.type.ColorCIE(str_repr=xml_node.get('Color'))
+        self.activation_group = pygdtf.value.NodeLink('ActivationGroups', xml_node.get('ActivationGroup'))
+        self.feature = pygdtf.value.NodeLink('FeatureGroups', xml_node.get('Feature'))
+        self.main_attribute = pygdtf.value.NodeLink('Attribute', xml_node.get('MainAttribute'))
+        self.physical_unit = pygdtf.value.PhysicalUnit(xml_node.get('PhysicalUnit'))
+        self.color = pygdtf.value.ColorCIE(str_repr=xml_node.get('Color'))
 
 
 class Wheel(BaseNode):
@@ -209,9 +209,9 @@ class WheelSlot(BaseNode):
 
     def _read_xml(self, xml_node: 'Element'):
         self.name = xml_node.get('Name')
-        self.color = pygdtf.type.ColorCIE(str_repr=xml_node.get('Color'))
-        self.filter = pygdtf.type.NodeLink('FilterCollect', xml_node.get('Filter'))
-        self.media_file_name = pygdtf.type.Resource(xml_node.get('MediaFileName'), 'png')
+        self.color = pygdtf.value.ColorCIE(str_repr=xml_node.get('Color'))
+        self.filter = pygdtf.value.NodeLink('FilterCollect', xml_node.get('Filter'))
+        self.media_file_name = pygdtf.value.Resource(xml_node.get('MediaFileName'), 'png')
         self.facets = [PrismFacet(xml_node=i) for i in xml_node.findall('Facet')]
 
 
@@ -223,8 +223,8 @@ class PrismFacet(BaseNode):
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: 'Element'):
-        self.color = pygdtf.type.ColorCIE(str_repr=xml_node.get('Color'))
-        self.rotation = pygdtf.type.Rotation(str_repr=xml_node.get('Rotation'))
+        self.color = pygdtf.value.ColorCIE(str_repr=xml_node.get('Color'))
+        self.rotation = pygdtf.value.Rotation(str_repr=xml_node.get('Rotation'))
 
 
 class Emitter(BaseNode):
@@ -239,7 +239,7 @@ class Emitter(BaseNode):
 
     def _read_xml(self, xml_node: 'Element'):
         self.name = xml_node.get('Name')
-        self.color = pygdtf.type.ColorCIE(str_repr=xml_node.get('Color'))
+        self.color = pygdtf.value.ColorCIE(str_repr=xml_node.get('Color'))
         try:
             self.dominant_wave_length = float(xml_node.get('DominantWaveLength'))
         except TypeError:
@@ -262,14 +262,14 @@ class Filter(BaseNode):
 
     def _read_xml(self, xml_node: 'Element'):
         self.name = xml_node.get('Name')
-        self.color = pygdtf.type.ColorCIE(str_repr=xml_node.get('Color'))
+        self.color = pygdtf.value.ColorCIE(str_repr=xml_node.get('Color'))
         self.measurements = [Measurement(xml_node=i) for i in xml_node.findall('Measurement')]
 
 
 class Measurement(BaseNode):
 
     def __init__(self, physical: float = None, luminous_intensity: float = None,
-                 transmission: float = None, interpolation_to: 'InterpolationTo' = pygdtf.type.InterpolationTo(None),
+                 transmission: float = None, interpolation_to: 'InterpolationTo' = pygdtf.value.InterpolationTo(None),
                  *args, **kwargs):
         self.physical = physical
         self.luminous_intensity = luminous_intensity
@@ -287,7 +287,7 @@ class Measurement(BaseNode):
             self.transmission = float(xml_node.get('Transmission'))
         except TypeError:
             self.transmission = None
-        self.interpolation_to = pygdtf.type.InterpolationTo(xml_node.get('InterpolationTo'))
+        self.interpolation_to = pygdtf.value.InterpolationTo(xml_node.get('InterpolationTo'))
         self.measurement_points = [MeasurementPoint(xml_node=i) for i in xml_node.findall('MeasurementPoint')]
 
 
@@ -305,7 +305,7 @@ class MeasurementPoint(BaseNode):
 
 class ColorSpace(BaseNode):
 
-    def __init__(self, mode: 'ColorSpaceMode' = pygdtf.type.ColorSpaceMode(None),
+    def __init__(self, mode: 'ColorSpaceMode' = pygdtf.value.ColorSpaceMode(None),
                  definition: 'ColorSpaceDefinition' = None, *args, **kwargs):
         self.mode = mode
         if definition is not None:
@@ -315,12 +315,12 @@ class ColorSpace(BaseNode):
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: 'Element'):
-        self.mode = pygdtf.type.ColorSpaceMode(xml_node.get('Mode'))
+        self.mode = pygdtf.value.ColorSpaceMode(xml_node.get('Mode'))
         if str(self.mode) == 'Custom':
-            self.red = pygdtf.type.ColorCIE(str_repr=xml_node.get('Red'))
-            self.green = pygdtf.type.ColorCIE(str_repr=xml_node.get('Green'))
-            self.blue = pygdtf.type.ColorCIE(str_repr=xml_node.get('Blue'))
-            self.white_point = pygdtf.type.ColorCIE(str_repr=xml_node.get('WhitePoint'))
+            self.red = pygdtf.value.ColorCIE(str_repr=xml_node.get('Red'))
+            self.green = pygdtf.value.ColorCIE(str_repr=xml_node.get('Green'))
+            self.blue = pygdtf.value.ColorCIE(str_repr=xml_node.get('Blue'))
+            self.white_point = pygdtf.value.ColorCIE(str_repr=xml_node.get('WhitePoint'))
         else:
             self._match_definition()
 
@@ -358,21 +358,21 @@ class CriGroup(BaseNode):
 
 class Cri(BaseNode):
 
-    def __init__(self, ces: 'Ces' = pygdtf.type.Ces(None), color_temperature: int = 100, *args, **kwargs):
+    def __init__(self, ces: 'Ces' = pygdtf.value.Ces(None), color_temperature: int = 100, *args, **kwargs):
         self.ces = ces
         self.color_temperature = color_temperature
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: 'Element'):
-        self.ces = pygdtf.type.Ces(xml_node.get('CES'))
+        self.ces = pygdtf.value.Ces(xml_node.get('CES'))
         self.color_temperature = int(xml_node.get('ColorTemperature', default=100))
 
 
 class Model(BaseNode):
 
     def __init__(self, name: str = None, length: float = 0, width: float = 0,
-                 height: float = 0, primitive_type: 'PrimitiveType' = pygdtf.type.PrimitiveType(None),
-                 file: pygdtf.type.Resource = None, *args, **kwargs):
+                 height: float = 0, primitive_type: 'PrimitiveType' = pygdtf.value.PrimitiveType(None),
+                 file: pygdtf.value.Resource = None, *args, **kwargs):
         self.name = name
         self.length = length
         self.width = width
@@ -386,14 +386,14 @@ class Model(BaseNode):
         self.length = float(xml_node.get('Length', default=0))
         self.width = float(xml_node.get('Width', default=0))
         self.height = float(xml_node.get('Height', default=0))
-        self.primitive_type = pygdtf.type.PrimitiveType(xml_node.get('PrimitiveType'))
-        self.file = pygdtf.type.Resource(xml_node.get('File'))
+        self.primitive_type = pygdtf.value.PrimitiveType(xml_node.get('PrimitiveType'))
+        self.file = pygdtf.value.Resource(xml_node.get('File'))
 
 
 class Geometry(BaseNode):
 
     def __init__(self, name: str = None, model: str = None,
-                 position: 'Matrix' = pygdtf.type.Matrix(0), geometries: List = None, *args, **kwargs):
+                 position: 'Matrix' = pygdtf.value.Matrix(0), geometries: List = None, *args, **kwargs):
         self.name = name
         self.model = model
         self.position = position
@@ -406,7 +406,7 @@ class Geometry(BaseNode):
     def _read_xml(self, xml_node: 'Element'):
         self.name = xml_node.get('Name')
         self.model = xml_node.get('Model')
-        self.position = pygdtf.type.Matrix(xml_node.get('Position', default=0))
+        self.position = pygdtf.value.Matrix(xml_node.get('Position', default=0))
         for i in xml_node.findall('Geometry'):
             self.geometries.append(Geometry(xml_node=i))
         for i in xml_node.findall('Axis'):
@@ -447,10 +447,10 @@ class GeometryFilterShaper(Geometry):
 
 class GeometryBeam(Geometry):
 
-    def __init__(self, lamp_type: 'LampType' = pygdtf.type.LampType(None), power_consumption: float = 1000,
+    def __init__(self, lamp_type: 'LampType' = pygdtf.value.LampType(None), power_consumption: float = 1000,
                  luminous_flux: float = 10000, color_temperature: float = 6000,
                  beam_angle: float = 25.0, field_angle: float = 25.0,
-                 beam_radius: float = 0.05, beam_type: pygdtf.type.BeamType = pygdtf.type.BeamType(None),
+                 beam_radius: float = 0.05, beam_type: pygdtf.value.BeamType = pygdtf.value.BeamType(None),
                  color_rendering_index: int = 100, *args, **kwargs):
         self.lamp_type = lamp_type
         self.power_consumption = power_consumption
@@ -465,20 +465,20 @@ class GeometryBeam(Geometry):
 
     def _read_xml(self, xml_node: 'Element'):
         super()._read_xml(xml_node)
-        self.lamp_type = pygdtf.type.LampType(xml_node.get('LampType'))
+        self.lamp_type = pygdtf.value.LampType(xml_node.get('LampType'))
         self.power_consumption = float(xml_node.get('PowerConsumption', default=1000))
         self.luminous_flux = float(xml_node.get('LuminousFlux', default=10000))
         self.color_temperature = float(xml_node.get('ColorTemperature', default=6000))
         self.beam_angle = float(xml_node.get('BeamAngle', default=25))
         self.field_angle = float(xml_node.get('FieldAngle', default=25))
         self.beam_radius = float(xml_node.get('BeamRadius', default=0.05))
-        self.beam_type = pygdtf.type.BeamType(xml_node.get('BeamType'))
+        self.beam_type = pygdtf.value.BeamType(xml_node.get('BeamType'))
         self.color_rendering_index = int(xml_node.get('ColorRenderingIndex', default=100))
 
 
 class GeometryReference(BaseNode):
 
-    def __init__(self, name: str = None, position: 'Matrix' = pygdtf.type.Matrix(0),
+    def __init__(self, name: str = None, position: 'Matrix' = pygdtf.value.Matrix(0),
                  geometry: str = None, model: str = None, *args, **kwargs):
         self.name = name
         self.position = position
@@ -488,7 +488,7 @@ class GeometryReference(BaseNode):
 
     def _read_xml(self, xml_node: 'Element'):
         self.name = xml_node.get('Name')
-        self.position = pygdtf.type.Matrix(xml_node.get('Position', default=0))
+        self.position = pygdtf.value.Matrix(xml_node.get('Position', default=0))
         self.geometry = xml_node.get('Geometry')
         self.model = xml_node.get('Model')
         self.breaks = [Break(xml_node=i) for i in xml_node.findall('Break')]
@@ -496,14 +496,14 @@ class GeometryReference(BaseNode):
 
 class Break(BaseNode):
 
-    def __init__(self, dmx_offset: 'DmxAddress' = pygdtf.type.DmxAddress('1'),
+    def __init__(self, dmx_offset: 'DmxAddress' = pygdtf.value.DmxAddress('1'),
                  dmx_break: int = 1, *args, **kwargs):
         self.dmx_offset = dmx_offset
         self.dmx_break = dmx_break
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: 'Element'):
-        self.dmx_offset = pygdtf.type.DmxAddress(xml_node.get('DMXOffset'))
+        self.dmx_offset = pygdtf.value.DmxAddress(xml_node.get('DMXOffset'))
         self.dmx_break = int(xml_node.get('DMXBreak', default=1))
 
 
@@ -543,7 +543,7 @@ class DmxMode(BaseNode):
 class DmxChannel(BaseNode):
 
     def __init__(self, dmx_break: int = 1, offset: List[int] = 'None',
-                 default: 'DmxValue' = pygdtf.type.DmxValue('0/1'), highlight: 'DmxValue' = 'None',
+                 default: 'DmxValue' = pygdtf.value.DmxValue('0/1'), highlight: 'DmxValue' = 'None',
                  geometry: str = None,
                  logical_channels: List['LogicalChannel'] = None, *args, **kwargs):
         self.dmx_break = dmx_break
@@ -563,16 +563,16 @@ class DmxChannel(BaseNode):
             self.offset = [int(i) for i in xml_node.get('Offset').split(',')]
         except ValueError:
             self.offset = 'None'
-        self.default = pygdtf.type.DmxValue(xml_node.get('Default', default='0/1'))
-        self.highlight = pygdtf.type.DmxValue(xml_node.get('Highlight'))
+        self.default = pygdtf.value.DmxValue(xml_node.get('Default', default='0/1'))
+        self.highlight = pygdtf.value.DmxValue(xml_node.get('Highlight'))
         self.geometry = xml_node.get('Geometry')
         self.logical_channels = [LogicalChannel(xml_node=i) for i in xml_node.findall('LogicalChannel')]
 
 
 class LogicalChannel(BaseNode):
 
-    def __init__(self, attribute: 'NodeLink' = None, snap: 'Snap' = pygdtf.type.Snap(None),
-                 master: 'Master' = pygdtf.type.Master(None), mib_fade: float = 0,
+    def __init__(self, attribute: 'NodeLink' = None, snap: 'Snap' = pygdtf.value.Snap(None),
+                 master: 'Master' = pygdtf.value.Master(None), mib_fade: float = 0,
                  dmx_change_time_limit: float = 0,
                  channel_functions: List['ChannelFunction'] = None, *args, **kwargs):
         self.attribute = attribute
@@ -587,9 +587,9 @@ class LogicalChannel(BaseNode):
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: 'Element'):
-        self.attribute = pygdtf.type.NodeLink('Attributes', xml_node.get('Attribute'))
-        self.snap = pygdtf.type.Snap(xml_node.get('Snap'))
-        self.master = pygdtf.type.Master(xml_node.get('Master'))
+        self.attribute = pygdtf.value.NodeLink('Attributes', xml_node.get('Attribute'))
+        self.snap = pygdtf.value.Snap(xml_node.get('Snap'))
+        self.master = pygdtf.value.Master(xml_node.get('Master'))
         self.mib_fade = float(xml_node.get('MibFade', default=0))
         self.dmx_change_time_limit = float(xml_node.get('DMXChangeTimeLimit', default=0))
         self.channel_functions = [ChannelFunction(xml_node=i) for i in xml_node.findall('ChannelFunction')]
@@ -598,11 +598,11 @@ class LogicalChannel(BaseNode):
 class ChannelFunction(BaseNode):
 
     def __init__(self, name: str = None, attribute: 'NodeLink' = 'NoFeature',
-                 original_attribute: str = None, dmx_from: 'DmxValue' = pygdtf.type.DmxValue('0/1'),
+                 original_attribute: str = None, dmx_from: 'DmxValue' = pygdtf.value.DmxValue('0/1'),
                  physical_from: float = 0, physical_to: float = 1, real_fade: float = 0,
                  wheel: 'NodeLink' = None, emitter: 'NodeLink' = None, filter: 'NodeLink' = None,
-                 dmx_invert: 'DmxInvert' = pygdtf.type.DmxInvert(None), mode_master: 'NodeLink' = None,
-                 mode_from: 'DmxValue' = pygdtf.type.DmxValue('0/1'), mode_to: 'DmxValue' = pygdtf.type.DmxValue('0/1'),
+                 dmx_invert: 'DmxInvert' = pygdtf.value.DmxInvert(None), mode_master: 'NodeLink' = None,
+                 mode_from: 'DmxValue' = pygdtf.value.DmxValue('0/1'), mode_to: 'DmxValue' = pygdtf.value.DmxValue('0/1'),
                  channel_sets: List['ChannelSet'] = None, *args, **kwargs):
         self.name = name
         self.attribute = attribute
@@ -626,25 +626,25 @@ class ChannelFunction(BaseNode):
 
     def _read_xml(self, xml_node: 'Element'):
         self.name = xml_node.get('Name')
-        self.attribute = pygdtf.type.NodeLink('Attributes', xml_node.get('Attribute', default='NoFeature'))
+        self.attribute = pygdtf.value.NodeLink('Attributes', xml_node.get('Attribute', default='NoFeature'))
         self.original_attribute = xml_node.get('OriginalAttribute')
-        self.dmx_from = pygdtf.type.DmxValue(xml_node.get('DMXFrom', default='0/1'))
+        self.dmx_from = pygdtf.value.DmxValue(xml_node.get('DMXFrom', default='0/1'))
         self.physical_from = float(xml_node.get('PhysicalFrom', default=0))
         self.physical_to = float(xml_node.get('PhysicalTo', default=1))
         self.real_fade = float(xml_node.get('RealFade', default=0))
-        self.wheel = pygdtf.type.NodeLink('WheelCollect', xml_node.get('Wheel'))
-        self.emitter = pygdtf.type.NodeLink('EmitterCollect', xml_node.get('Emitter'))
-        self.filter = pygdtf.type.NodeLink('FilterCollect', xml_node.get('Filter'))
-        self.dmx_invert = pygdtf.type.DmxInvert(xml_node.get('DMXInvert'))
-        self.mode_master = pygdtf.type.Master(xml_node.get('ModeMaster'))
-        self.mode_from = pygdtf.type.DmxValue(xml_node.get('ModeFrom', default='0/1'))
-        self.mode_to = pygdtf.type.DmxValue(xml_node.get('ModeTo', default='0/1'))
+        self.wheel = pygdtf.value.NodeLink('WheelCollect', xml_node.get('Wheel'))
+        self.emitter = pygdtf.value.NodeLink('EmitterCollect', xml_node.get('Emitter'))
+        self.filter = pygdtf.value.NodeLink('FilterCollect', xml_node.get('Filter'))
+        self.dmx_invert = pygdtf.value.DmxInvert(xml_node.get('DMXInvert'))
+        self.mode_master = pygdtf.value.Master(xml_node.get('ModeMaster'))
+        self.mode_from = pygdtf.value.DmxValue(xml_node.get('ModeFrom', default='0/1'))
+        self.mode_to = pygdtf.value.DmxValue(xml_node.get('ModeTo', default='0/1'))
         self.channel_sets = [ChannelSet(xml_node=i) for i in xml_node.findall('ChannelSet')]
 
 
 class ChannelSet(BaseNode):
 
-    def __init__(self, name: str = None, dmx_from: 'DmxValue' = pygdtf.type.DmxValue('0/1'),
+    def __init__(self, name: str = None, dmx_from: 'DmxValue' = pygdtf.value.DmxValue('0/1'),
                  physical_from: float = 0, physical_to: float = 1,
                  wheel_slot_index: int = 1, *args, **kwargs):
         self.name = name
@@ -656,7 +656,7 @@ class ChannelSet(BaseNode):
 
     def _read_xml(self, xml_node: 'Element'):
         self.name = xml_node.get('Name')
-        self.dmx_from = pygdtf.type.DmxValue(xml_node.get('DMXFrom', default='0/1'))
+        self.dmx_from = pygdtf.value.DmxValue(xml_node.get('DMXFrom', default='0/1'))
         self.physical_from = float(xml_node.get('PhysicalFrom', default=0))
         self.physical_to = float(xml_node.get('PhysicalTo', default=1))
         self.wheel_slot_index = int(xml_node.get('WheelSlotIndex', default=1))
@@ -665,7 +665,7 @@ class ChannelSet(BaseNode):
 class Relation(BaseNode):
 
     def __init__(self, name: str = None, master: 'NodeLink' = None,
-                 follower: 'NodeLink' = None, type: 'RelationType' = pygdtf.type.RelationType(None),
+                 follower: 'NodeLink' = None, type: 'RelationType' = pygdtf.value.RelationType(None),
                  *args, **kwargs):
         self.name = name
         self.master = master
@@ -675,9 +675,9 @@ class Relation(BaseNode):
 
     def _read_xml(self, xml_node: 'Element'):
         self.name = xml_node.get('Name')
-        self.master = pygdtf.type.NodeLink('DMXMode', xml_node.get('Master'))
-        self.follower = pygdtf.type.NodeLink('DMXMode', xml_node.get('Follower'))
-        self.type = pygdtf.type.RelationType(xml_node.get('Type'))
+        self.master = pygdtf.value.NodeLink('DMXMode', xml_node.get('Master'))
+        self.follower = pygdtf.value.NodeLink('DMXMode', xml_node.get('Follower'))
+        self.type = pygdtf.value.RelationType(xml_node.get('Type'))
 
 
 class Macro(BaseNode):
@@ -729,8 +729,8 @@ class MacroDmxValue(BaseNode):
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: 'Element'):
-        self.value = pygdtf.type.DmxValue(xml_node.get('Value'))
-        self.dmx_channel = pygdtf.type.NodeLink('DMXChannelCollect', xml_node.get('DMXChannel'))
+        self.value = pygdtf.value.DmxValue(xml_node.get('Value'))
+        self.dmx_channel = pygdtf.value.NodeLink('DMXChannelCollect', xml_node.get('DMXChannel'))
 
 
 class MacroVisualStep(BaseNode):
@@ -761,8 +761,8 @@ class MacroVisualValue(BaseNode):
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: 'Element'):
-        self.value = pygdtf.type.DmxValue(xml_node.get('Value'))
-        self.channel_function = pygdtf.type.NodeLink('DMXChannelCollect', xml_node.get('ChannelFunction'))
+        self.value = pygdtf.value.DmxValue(xml_node.get('Value'))
+        self.channel_function = pygdtf.value.NodeLink('DMXChannelCollect', xml_node.get('ChannelFunction'))
 
 
 class Revision(BaseNode):
