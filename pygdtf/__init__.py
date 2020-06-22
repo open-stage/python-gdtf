@@ -50,47 +50,76 @@ class FixtureType:
         self.fixture_type_id = self._root.get('FixtureTypeID')
         self.thumbnail = self._root.get('Thumbnail')
         self.ref_ft = self._root.get('RefFT')
-        xactivation_groups = self._root.find('AttributeDefinitions').find('ActivationGroups').findall('ActivationGroup')
-        self.activation_groups = [ActivationGroup(xml_node=i) for i in xactivation_groups]
-        xfeature_groups = self._root.find('AttributeDefinitions').find('FeatureGroups').findall('FeatureGroup')
-        self.feature_groups = [FeatureGroup(xml_node=i) for i in xfeature_groups]
-        xattributes = self._root.find('AttributeDefinitions').find('Attributes').findall('Attribute')
-        self.attributes = [Attribute(xml_node=i) for i in xattributes]
-        xwheels = self._root.find('Wheels').findall('Wheel')
-        self.wheels = [Wheel(xml_node=i) for i in xwheels]
-        xemitters = self._root.find('PhysicalDescriptions').find('Emitters').findall('Emitter')
-        self.emitters = [Emitter(xml_node=i) for i in xemitters]
-        xfilters = self._root.find('PhysicalDescriptions').find('Filters').findall('Filter')
-        self.filters = [Filter(xml_node=i) for i in xfilters]
-        self.color_space = self._root.find('PhysicalDescriptions').find('ColorSpace')
-        xdmx_profiles = self._root.find('PhysicalDescriptions').find('DMXProfiles').findall('DMXProfile')
-        self.dmx_profiles = [DmxProfile(xml_node=i) for i in xdmx_profiles]
-        xcri_groups = self._root.find('PhysicalDescriptions').find('CRIs').findall('CRIGroup')
-        self.cri_groups = [CriGroup(xml_node=i) for i in xcri_groups]
-        xmodels = self._root.find('Models').findall('Model')
-        self.models = [Model(xml_node=i) for i in xmodels]
-        xgeometry_collect = self._root.find('Geometries')
+        # For each attribute, we first check for the existence of the collect node
+        # If such a node doesn't exist, then none of the children will exist and
+        # the corresponding attribute for this class can be set to empty. Failing
+        # to do this would result in AttributeError if we try to, for example, run
+        # a findall on a non-existent collect
+        if activation_collect:= self._root.find('AttributeDefinitions').find('ActivationGroups'):
+            self.activation_groups = [ActivationGroup(xml_node=i) for i in activation_collect.findall('ActivationGroup')]
+        else:
+            self.activation_groups = []
+        if feature_collect:= self._root.find('AttributeDefinitions').find('FeatureGroups'):
+            self.feature_groups = [FeatureGroup(xml_node=i) for i in feature_collect.findall('FeatureGroup')]
+        else:
+            self.feature_groups = []
+        if attribute_collect:= self._root.find('AttributeDefinitions').find('Attributes'):
+            self.attributes = [Attribute(xml_node=i) for i in attribute_collect.findall('Attribute')]
+        else:
+            self.attributes = []
+        if wheel_collect:= self._root.find('Wheels'):
+            self.wheels = [Wheel(xml_node=i) for i in wheel_collect.findall('Wheel')]
+        else:
+            self.wheels = []
+        if emitter_collect:= self._root.find('PhysicalDescriptions').find('Emitters'):
+            self.emitters = [Emitter(xml_node=i) for i in emitter_collect.findall('Emitter')]
+        else:
+            self.emitters = []
+        if filter_collect:= self._root.find('PhysicalDescriptions').find('Filters'):
+            self.filters = [Filter(xml_node=i) for i in filter_collect.findall('Filter')]
+        else:
+            self.filters = []
+        if color_space:= self._root.find('PhysicalDescriptions').find('ColorSpace'):
+            self.color_space = ColorSpace(xml_node=color_space)
+        else:
+            # The default color space is sRGB if nothing else is defined
+            self.color_space = ColorSpace(mode=pygdtf.value.ColorSpaceMode('sRGB'))
+        if profiles_collect:= self._root.find('PhysicalDescriptions').find('DMXProfiles'):
+            self.dmx_profiles = [DmxProfile(xml_node=i) for i in profiles_collect.findall('DMXProfile')]
+        else:
+            self.dmx_profiles = []
+        if cri_collect:= self._root.find('PhysicalDescriptions').find('CRIs'):
+            self.cri_groups = [CriGroup(xml_node=i) for i in cri_collect.findall('CRIGroup')]
+        else:
+            self.cri_groups = []
+        if model_collect:= self._root.find('Models'):
+            self.models = [Model(xml_node=i) for i in model_collect.findall('Model')]
         self.geometries = []
-        for i in xgeometry_collect.findall('Geometry'):
-            self.geometries.append(Geometry(xml_node=i))
-        for i in xgeometry_collect.findall('Axis'):
-            self.geometries.append(GeometryAxis(xml_node=i))
-        for i in xgeometry_collect.findall('FilterBeam'):
-            self.geometries.append(GeometryFilterBeam(xml_node=i))
-        for i in xgeometry_collect.findall('FilterColor'):
-            self.geometries.append(GeometryFilterColor(xml_node=i))
-        for i in xgeometry_collect.findall('FilterGobo'):
-            self.geometries.append(GeometryFilterGobo(xml_node=i))
-        for i in xgeometry_collect.findall('FilterShaper'):
-            self.geometries.append(GeometryFilterShaper(xml_node=i))
-        for i in xgeometry_collect.findall('Beam'):
-            self.geometries.append(GeometryBeam(xml_node=i))
-        for i in xgeometry_collect.findall('GeometryReference'):
-            self.geometries.append(GeometryReference(xml_node=i))
-        xdmx_modes = self._root.find('DMXModes').findall('DMXMode')
-        self.dmx_modes = [DmxMode(xml_node=i) for i in xdmx_modes]
-        xrevisions = self._root.find('Revisions').findall('Revision')
-        self.revisions = [Revision(xml_node=i) for i in xrevisions]
+        if geometry_collect:= self._root.find('Geometries'):
+            for i in geometry_collect.findall('Geometry'):
+                self.geometries.append(Geometry(xml_node=i))
+            for i in geometry_collect.findall('Axis'):
+                self.geometries.append(GeometryAxis(xml_node=i))
+            for i in geometry_collect.findall('FilterBeam'):
+                self.geometries.append(GeometryFilterBeam(xml_node=i))
+            for i in geometry_collect.findall('FilterColor'):
+                self.geometries.append(GeometryFilterColor(xml_node=i))
+            for i in geometry_collect.findall('FilterGobo'):
+                self.geometries.append(GeometryFilterGobo(xml_node=i))
+            for i in geometry_collect.findall('FilterShaper'):
+                self.geometries.append(GeometryFilterShaper(xml_node=i))
+            for i in geometry_collect.findall('Beam'):
+                self.geometries.append(GeometryBeam(xml_node=i))
+            for i in geometry_collect.findall('GeometryReference'):
+                self.geometries.append(GeometryReference(xml_node=i))
+        if dmx_mode_collect:= self._root.find('DMXModes'):
+            self.dmx_modes = [DmxMode(xml_node=i) for i in dmx_mode_collect.findall('DMXMode')]
+        else:
+            self.dmx_modes = []
+        if revision_collect:= self._root.find('Revisions'):
+            self.revisions = [Revision(xml_node=i) for i in revision_collect.findall('Revision')]
+        else:
+            self.revisions = []
 
     def get_geometry_by_type(self, geometry_class):
         """Recursively find all geometries of a given type"""
@@ -556,7 +585,7 @@ class DmxChannel(BaseNode):
 
     def _read_xml(self, xml_node: 'Element'):
         try:
-            self.dmx_break = int(xml_node.get('DMXBreak'))
+            self.dmx_break = int(xml_node.get('DMXBreak', default=1))
         except ValueError:
             self.dmx_break = 'Overwrite'
         try:
