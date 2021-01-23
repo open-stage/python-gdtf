@@ -588,10 +588,11 @@ class DmxChannel(BaseNode):
             self.dmx_break = int(xml_node.attrib.get('DMXBreak', 1))
         except ValueError:
             self.dmx_break = 'Overwrite'
-        try:
-            self.offset = [int(i) for i in xml_node.attrib.get('Offset').split(',')]
-        except ValueError:
+        _offset = xml_node.attrib.get('Offset')
+        if _offset is None or _offset == 'None':
             self.offset = 'None'
+        else:
+            self.offset = [int(i) for i in xml_node.attrib.get('Offset').split(',')]
         self.default = DmxValue(xml_node.attrib.get('Default', '0/1'))
         self.highlight = DmxValue(xml_node.attrib.get('Highlight'))
         self.geometry = xml_node.attrib.get('Geometry')
