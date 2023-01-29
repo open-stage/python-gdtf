@@ -3,7 +3,7 @@ from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 import zipfile
 from pygdtf.value import *
-
+from .utils import *
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -19,14 +19,11 @@ COLOR_SPACE_ANSI = ColorSpaceDefinition(
 
 def _find_root(pkg: 'zipfile.ZipFile') -> 'ElementTree.Element':
     """Given a GDTF zip archive, find the FixtureType of the corresponding
-    description.xml file. The root element of a GDTF description file is
-    actually a GDTF node, however as the GDTF node only ever has one child, a
-    FixtureType node, and the library functions have no use for the GDTF
-    node, we simply return the FixtureType node here."""
+    description.xml file."""
 
     with pkg.open('description.xml', 'r') as f:
         description_str = f.read()
-    return ElementTree.fromstring(description_str).find('FixtureType')
+    return ElementTree.fromstring(description_str)
 
 
 class FixtureType:
@@ -37,11 +34,13 @@ class FixtureType:
         if path is not None:
             self._package = zipfile.ZipFile(path, 'r')
         if self._package is not None:
-            self._root = _find_root(self._package)
+            self._gdtf = _find_root(self._package)
+            self._root = self._gdtf.find('FixtureType')
         if self._root is not None:
             self._read_xml()
 
     def _read_xml(self):
+        self.data_version = self._gdtf.get('DataVersion')
         self.name = self._root.get('Name')
         self.short_name = self._root.get('ShortName')
         self.long_name = self._root.get('LongName')
@@ -94,6 +93,12 @@ class FixtureType:
             self.cri_groups = []
         if model_collect := self._root.find('Models'):
             self.models = [Model(xml_node=i) for i in model_collect.findall('Model')]
+        for model in self.models:
+            if f"models/gltf/{model.file.name}.glb" in self._package.namelist():
+                model.file.extension='glb'
+            else:
+                model.file.extension='3ds'
+
         self.geometries = []
         if geometry_collect := self._root.find('Geometries'):
             for i in geometry_collect.findall('Geometry'):
@@ -120,8 +125,6 @@ class FixtureType:
             self.revisions = [Revision(xml_node=i) for i in revision_collect.findall('Revision')]
         else:
             self.revisions = []
-
-
 
 class BaseNode:
 
@@ -443,6 +446,10 @@ class Geometry(BaseNode):
         for i in xml_node.findall('GeometryReference'):
             self.geometries.append(GeometryReference(xml_node=i))
 
+    def __str__(self):
+        return f"{self.name} ({self.model})"
+
+
 
 class GeometryAxis(Geometry):
     pass
@@ -512,6 +519,8 @@ class GeometryReference(BaseNode):
         self.model = xml_node.attrib.get('Model')
         self.breaks = [Break(xml_node=i) for i in xml_node.findall('Break')]
 
+    def __str__(self):
+        return f"{self.name} ({self.model})"
 
 class Break(BaseNode):
 
@@ -579,8 +588,8 @@ class DmxChannel(BaseNode):
         except ValueError:
             self.dmx_break = 'Overwrite'
         _offset = xml_node.attrib.get('Offset')
-        if _offset is None or _offset == 'None':
-            self.offset = 'None'
+        if _offset is None or _offset == 'None' or _offset =='':
+            self.offset = None
         else:
             self.offset = [int(i) for i in xml_node.attrib.get('Offset').split(',')]
         self.default = DmxValue(xml_node.attrib.get('Default', '0/1'))
@@ -619,6 +628,7 @@ class ChannelFunction(BaseNode):
 
     def __init__(self, name: str = None, attribute: 'NodeLink' = 'NoFeature',
                  original_attribute: str = None, dmx_from: 'DmxValue' = DmxValue('0/1'),
+                 default: 'DmxValue' = DmxValue('0/1'),
                  physical_from: float = 0, physical_to: float = 1, real_fade: float = 0,
                  wheel: 'NodeLink' = None, emitter: 'NodeLink' = None, chn_filter: 'NodeLink' = None,
                  dmx_invert: 'DmxInvert' = DmxInvert(None), mode_master: 'NodeLink' = None,
@@ -628,6 +638,7 @@ class ChannelFunction(BaseNode):
         self.attribute = attribute
         self.original_attribute = original_attribute
         self.dmx_from = dmx_from
+        self.default = default
         self.physical_from = physical_from
         self.physical_to = physical_to
         self.real_fade = real_fade
@@ -649,6 +660,7 @@ class ChannelFunction(BaseNode):
         self.attribute = NodeLink('Attributes', xml_node.attrib.get('Attribute', 'NoFeature'))
         self.original_attribute = xml_node.attrib.get('OriginalAttribute')
         self.dmx_from = DmxValue(xml_node.attrib.get('DMXFrom', '0/1'))
+        self.default = DmxValue(xml_node.attrib.get('Default', '0/1'))
         self.physical_from = float(xml_node.attrib.get('PhysicalFrom', 0))
         self.physical_to = float(xml_node.attrib.get('PhysicalTo', 1))
         self.real_fade = float(xml_node.attrib.get('RealFade', 0))
@@ -737,7 +749,7 @@ class MacroDmxStep(BaseNode):
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: 'Element'):
-        self.duration = int(xml_node.attrib.get('Duration'))
+        self.duration = float(xml_node.attrib.get('Duration'))
         self.dmx_values = [MacroDmxValue(xml_node=i) for i in xml_node.findall('MacroDMXValue')]
 
 
