@@ -121,16 +121,6 @@ class FixtureType:
         else:
             self.revisions = []
 
-    def get_geometry_by_type(self, geometry_class):
-        """Recursively find all geometries of a given type"""
-        def iterate_geometries(collector):
-            for g in collector.geometries:
-                if type(g) == geometry_class:
-                    matched.append(g)
-                iterate_geometries(g)
-        matched = []
-        iterate_geometries(self)
-        return matched
 
 
 class BaseNode:
