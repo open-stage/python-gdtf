@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import pytest
-import pygdtf
+from pygdtf import pygdtf
 
 # This file sets up a pytest fixtures for the tests
 # It is important that this file stays in this location
