@@ -2,7 +2,7 @@ from typing import List
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 import zipfile
-from pygdtf.value import *
+from pygdtf.value import * # type: ignore
 from .utils import *
 
 # Standard predefined colour spaces: R, G, B, W-P
@@ -668,7 +668,7 @@ class ChannelFunction(BaseNode):
         self.emitter = NodeLink('EmitterCollect', xml_node.attrib.get('Emitter'))
         self.filter = NodeLink('FilterCollect', xml_node.attrib.get('Filter'))
         self.dmx_invert = DmxInvert(xml_node.attrib.get('DMXInvert'))
-        self.mode_master = Master(xml_node.attrib.get('ModeMaster'))
+        self.mode_master = NodeLink('DMXChannel', xml_node.attrib.get('ModeMaster'))
         self.mode_from = DmxValue(xml_node.attrib.get('ModeFrom', '0/1'))
         self.mode_to = DmxValue(xml_node.attrib.get('ModeTo', '0/1'))
         self.channel_sets = [ChannelSet(xml_node=i) for i in xml_node.findall('ChannelSet')]
@@ -739,7 +739,7 @@ class Macro(BaseNode):
 
 class MacroDmxStep(BaseNode):
 
-    def __init__(self, duration: int = 1, dmx_values: List['MacroDmxValue'] = None,
+    def __init__(self, duration: float = 1, dmx_values: List['MacroDmxValue'] = None,
                  *args, **kwargs):
         self.duration = duration
         if dmx_values is not None:

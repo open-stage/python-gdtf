@@ -1,5 +1,5 @@
 import pygdtf
-from typing import List, Dict
+from typing import List, Dict, Any
 
 
 def getValue(dmx_value, fine=False):
@@ -19,6 +19,7 @@ def get_dmx_mode_by_name(gdtf_profile: 'pygdtf.FixtureType' = None,
     for mode in gdtf_profile.dmx_modes:
         if mode.name == mode_name:
             return mode
+    return None
 
 
 def get_geometry_by_name(gdtf_profile: 'pygdtf.FixtureType' = None, 
@@ -34,10 +35,12 @@ def get_geometry_by_name(gdtf_profile: 'pygdtf.FixtureType' = None,
             if hasattr(g, "geometries"):
                 iterate_geometries(g)
 
-    matched = []
+    matched: List['pygdtf.Geometry'] = []
     iterate_geometries(gdtf_profile)
     if matched:
         return matched[0]
+
+    return None
 
 
 def get_geometry_by_type(root_geometry: 'pygdtf.Geometry' = None, 
@@ -51,7 +54,7 @@ def get_geometry_by_type(root_geometry: 'pygdtf.Geometry' = None,
             if hasattr(g, "geometries"):
                 iterate_geometries(g)
 
-    matched = []
+    matched: List['pygdtf.Geometry'] = []
     iterate_geometries(root_geometry)
     return matched
 
@@ -63,11 +66,13 @@ def get_model_by_name(gdtf_profile: 'pygdtf.FixtureType' = None,
         if model.name == model_name:
             return model
 
+    return None
+
 
 def get_channels_by_geometry(geometry_name: str = None, 
-                             channels: List['pygdtf.DmxChannel'] = None) -> List['pygdtf.DmxChannel']:
+                             channels: List['pygdtf.DmxChannel'] = []) -> List['pygdtf.DmxChannel']:
     """Find channels for a given geometry"""
-    matched = []
+    matched: List['pygdtf.DmxChannel'] = []
     for channel in channels:
         if channel.geometry == geometry_name:
             matched.append(channel)
@@ -75,17 +80,18 @@ def get_channels_by_geometry(geometry_name: str = None,
     return matched
 
 
-def get_address_by_break(dmx_breaks: 'pygdtf.Break' = None, 
+def get_address_by_break(dmx_breaks: List['pygdtf.Break'] = [], 
                          value: int = 1) -> 'pygdtf.DmxAddress':
     """Return DMX address for a given DMX break"""
     for item in dmx_breaks:
         if item.dmx_break == value:
             return item.dmx_offset
+    return None
 
 
 def get_channels_for_geometry(gdtf_profile: 'pygdtf.FixtureType' = None, geometry: 'pygdtf.Geometry' = None, 
-                              dmx_channels: List['pygdtf.DmxChannel'] = None, 
-                              channel_list: List['pygdtf.DmxChannel'] = None) -> List['pygdtf.DmxChannel']:
+                              dmx_channels: List['pygdtf.DmxChannel'] = [], 
+                              channel_list: List[Any] = []) -> List[Any]:
     """Get all channels for the device, recursively, starting from root geometry"""
     name = geometry.name
 
@@ -103,7 +109,7 @@ def get_channels_for_geometry(gdtf_profile: 'pygdtf.FixtureType' = None, geometr
 
 
 def get_dmx_channels(gdtf_profile: 'pygdtf.FixtureType' = None, 
-                     mode: 'pygdtf.DmxMode' = None) -> List['Dict']:
+                     mode: str = None) -> List['Dict']:
     """Returns list of arrays, each array is one DMX Break,
     with DMX channels, defaults, geometries"""
 
@@ -114,7 +120,7 @@ def get_dmx_channels(gdtf_profile: 'pygdtf.FixtureType' = None,
         gdtf_profile, root_geometry, dmx_mode.dmx_channels, []
     )
 
-    dmx_channels = []
+    dmx_channels:List[Any] = []
 
     for channel, geometry in device_channels:
         if channel.offset is None:
