@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union, Optional
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 import zipfile
@@ -572,9 +572,9 @@ class DmxMode(BaseNode):
 
 class DmxChannel(BaseNode):
 
-    def __init__(self, dmx_break: int = 1, offset: List[int] = 'None',
-                 default: 'DmxValue' = DmxValue('0/1'), highlight: 'DmxValue' = 'None',
-                 geometry: str = None,
+    def __init__(self, dmx_break: Union[int, str] = 1, offset: List[int] = None,
+                 default: 'DmxValue' = DmxValue('0/1'), highlight: Optional['DmxValue'] = None,
+                 geometry: Optional[str] = None,
                  logical_channels: List['LogicalChannel'] = None, *args, **kwargs):
         self.dmx_break = dmx_break
         self.offset = offset
@@ -628,7 +628,7 @@ class LogicalChannel(BaseNode):
 
 class ChannelFunction(BaseNode):
 
-    def __init__(self, name: str = None, attribute: 'NodeLink' = 'NoFeature',
+    def __init__(self, name: str = None, attribute: Union['NodeLink', str] = 'NoFeature',
                  original_attribute: str = None, dmx_from: 'DmxValue' = DmxValue('0/1'),
                  default: 'DmxValue' = DmxValue('0/1'),
                  physical_from: float = 0, physical_to: float = 1, real_fade: float = 0,
@@ -801,7 +801,7 @@ class MacroVisualValue(BaseNode):
 
 class Revision(BaseNode):
 
-    def __init__(self, text: str = None, date: str = None, user_id: int = 0, *args, **kwargs):
+    def __init__(self, text: Union[str, None] = None, date: Union[str, None] = None, user_id: int = 0, *args, **kwargs):
         self.text = text
         self.date = date
         self.user_id = user_id
@@ -810,4 +810,4 @@ class Revision(BaseNode):
     def _read_xml(self, xml_node: 'Element'):
         self.text = xml_node.attrib.get('Text')
         self.date = xml_node.attrib.get('Date')
-        self.user_id = int(xml_node.attrib.get('UserID'))
+        self.user_id = int(xml_node.attrib.get('UserID', 0))
