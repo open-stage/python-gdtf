@@ -19,3 +19,7 @@ def gdtf_fixture():
 @pytest.fixture(scope="session")
 def pygdtf_module():
     yield pygdtf
+
+def pytest_configure(config):
+    plugin = config.pluginmanager.getplugin('mypy')
+    plugin.mypy_argv.append('--no-strict-optional')
