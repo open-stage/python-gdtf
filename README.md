@@ -45,7 +45,7 @@ reference implementation.
 * At this point, the `--no-strict-optional` is needed for mypy tests to pass:
 
 ```bash
-mypy pymvr/*py  --pretty  --no-strict-optional
+mypy pygdtf/*py  --pretty  --no-strict-optional
 ```
 ### Format
 
@@ -57,5 +57,5 @@ mypy pymvr/*py  --pretty  --no-strict-optional
 - to test typing with mypy use 
 
 ```bash
-pytest --mypy -m mypy pymvr/*py
+pytest --mypy -m mypy pygdtf/*py
 ```
