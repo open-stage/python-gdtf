@@ -7,6 +7,7 @@ from pygdtf import pygdtf
 # It is important that this file stays in this location
 # as this makes pytest to load pygdtf from the pygdtf directory
 
+
 @pytest.fixture(scope="session")
 def gdtf_fixture():
     test_fixture_file_path = Path(
@@ -20,6 +21,7 @@ def gdtf_fixture():
 def pygdtf_module():
     yield pygdtf
 
+
 def pytest_configure(config):
-    plugin = config.pluginmanager.getplugin('mypy')
-    plugin.mypy_argv.append('--no-strict-optional')
+    plugin = config.pluginmanager.getplugin("mypy")
+    plugin.mypy_argv.append("--no-strict-optional")
