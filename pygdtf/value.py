@@ -89,6 +89,30 @@ class LampType(Enum):
     _default = "Discharge"
 
 
+class FuseRating(Enum):
+    permitted = ["B", "C", "D", "K", "Z"]
+    _default = "B"
+
+
+class Orientation(Enum):
+    permitted = ["Left", "Right", "Top", "Bottom"]
+    _default = "Left"
+
+class ComponentType(Enum):
+    permitted = [
+        "Input",
+        "Output",
+        "PowerSource",
+        "Consumer",
+        "Fuse",
+        "NetworkProvider",
+        "NetworkInput",
+        "NetworkOutput",
+        "NetworkInOut",
+    ]
+    _default = "Input"
+
+
 class BeamType(Enum):
     permitted = ["Wash", "Spot", "None"]
     _default = "Wash"
