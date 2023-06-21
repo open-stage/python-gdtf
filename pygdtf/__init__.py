@@ -688,9 +688,7 @@ class GeometryWiringObject(Geometry):
     def _read_xml(self, xml_node: "Element"):
         super()._read_xml(xml_node)
         self.connector_type = xml_node.attrib.get("ConnectorType")
-        self.component_type: ComponentType = ComponentType(
-            xml_node.attrib.get("ComponentType")
-        )
+        self.component_type = ComponentType(xml_node.attrib.get("ComponentType"))
         self.signal_type = xml_node.attrib.get("SignalType")
         self.pin_count = int(xml_node.attrib.get("PinCount"))
         self.electrical_payload = float(xml_node.attrib.get("ElectricalPayLoad"))
