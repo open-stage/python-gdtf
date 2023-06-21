@@ -142,6 +142,7 @@ def get_virtual_channels(
                         channel.logical_channels[0].channel_functions[0].default
                     ),
                     "geometry": geometry.name,
+                    "channel_functions": channel.logical_channels[0].channel_functions,
                 }
             )
     return virtual_channels
@@ -186,6 +187,7 @@ def get_dmx_channels(
 
         max_offset = max([offset0, offset1])
 
+        # TODO: fix a bug that causes placeholder dicts to be generated for then next (incorrect) break
         if len(break_channels) < max_offset:
             # print(len(break_channels), break_channels)
             break_channels = break_channels + [
@@ -200,6 +202,7 @@ def get_dmx_channels(
             ),
             "geometry": geometry.name,
             "break": channel.dmx_break,
+            "channel_functions": channel.logical_channels[0].channel_functions,
         }
         if offset1 > 0:
             break_channels[offset1 - 1] = {
@@ -211,6 +214,7 @@ def get_dmx_channels(
                 ),
                 "geometry": geometry.name,
                 "break": channel.dmx_break,
+                "channel_functions": channel.logical_channels[0].channel_functions,
             }
         dmx_channels[channel.dmx_break - 1] = break_channels
 
@@ -228,7 +232,6 @@ def get_dmx_modes_info(gdtf_profile: "pygdtf.FixtureType" = None):
     for idx, mode in enumerate(gdtf_profile.dmx_modes):
         mode_id = idx
         mode_name = mode.name
-        print("mode name", mode_name)
         dmx_channels = get_dmx_channels(gdtf_profile, mode_name)
         dmx_channels_flattened = [
             channel for break_channels in dmx_channels for channel in break_channels
