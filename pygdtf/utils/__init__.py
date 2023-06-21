@@ -248,6 +248,41 @@ def get_dmx_modes_info(gdtf_profile: "pygdtf.FixtureType" = None):
     return dmx_mode_list
 
 
+def get_beam_geometries_for_mode(
+    gdtf_profile: "pygdtf.FixtureType" = None, mode_name: str = None
+):
+    # TODO: refactor into get geometry by type, but starting from a DMX mode
+    dmx_mode = get_dmx_mode_by_name(gdtf_profile, mode_name)
+    root_geometry = get_geometry_by_name(gdtf_profile, dmx_mode.geometry)
+    return get_beam_geometries(gdtf_profile, root_geometry, [])
+
+
+def get_beam_geometries(
+    gdtf_profile: "pygdtf.FixtureType" = None,
+    geometry: "pygdtf.Geometry" = None,
+    geometry_list: List[Any] = [],
+) -> List[Any]:
+    """Get beam geometries"""
+
+    if isinstance(geometry, pygdtf.GeometryBeam):
+        geometry_list.append(geometry)
+
+    if isinstance(geometry, pygdtf.GeometryReference):
+        geometry_list = get_beam_geometries(
+            gdtf_profile,
+            get_geometry_by_name(gdtf_profile, geometry.geometry),
+            geometry_list,
+        )
+
+
+    if hasattr(geometry, "geometries"):
+        for sub_geometry in geometry.geometries:
+            geometry_list = get_beam_geometries(
+                gdtf_profile, sub_geometry, geometry_list
+            )
+    return geometry_list
+
+
 def calculate_complexity(gdtf_profile: "pygdtf.FixtureType" = None):
     """Returns complexity rating of the device based on presumed amount of work while creating it"""
 
