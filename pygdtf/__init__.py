@@ -151,6 +151,8 @@ class FixtureType:
                 self.geometries.append(GeometryInventory(xml_node=i))
             for i in geometry_collect.findall("Beam"):
                 self.geometries.append(GeometryBeam(xml_node=i))
+            for i in geometry_collect.findall("WiringObject"):
+                self.geometries.append(GeometryWiringObject(xml_node=i))
             for i in geometry_collect.findall("GeometryReference"):
                 self.geometries.append(GeometryReference(xml_node=i))
         if dmx_mode_collect := self._root.find("DMXModes"):
@@ -556,6 +558,8 @@ class Geometry(BaseNode):
             self.geometries.append(GeometryFilterShaper(xml_node=i))
         for i in xml_node.findall("Beam"):
             self.geometries.append(GeometryBeam(xml_node=i))
+        for i in xml_node.findall("WiringObject"):
+            self.geometries.append(GeometryWiringObject(xml_node=i))
         for i in xml_node.findall("GeometryReference"):
             self.geometries.append(GeometryReference(xml_node=i))
 
@@ -637,6 +641,71 @@ class GeometryBeam(Geometry):
         self.color_rendering_index = int(
             xml_node.attrib.get("ColorRenderingIndex", 100)
         )
+
+
+class GeometryWiringObject(Geometry):
+    def __init__(
+        self,
+        connector_type: str = None,
+        component_type: "ComponentType" = ComponentType(None),
+        signal_type: str = None,
+        pin_count: int = 0,
+        electrical_payload: float = 0,
+        voltage_range_max: float = 0,
+        voltage_range_min: float = 0,
+        frequency_range_max: float = 0,
+        frequency_range_min: float = 0,
+        max_payload: float = 0,
+        voltage: float = 0,
+        signal_layer: int = 0,
+        cos_phi: float = 0,
+        fuse_current: float = 0,
+        fuse_rating: "FuseRating" = FuseRating(None),
+        orientation: "Orientation" = Orientation(None),
+        wire_group: str = None,
+        *args,
+        **kwargs,
+    ):
+        self.connector_type = connector_type
+        self.component_type = component_type
+        self.signal_type = signal_type
+        self.pin_count = pin_count
+        self.electrical_payload = electrical_payload
+        self.voltage_range_max = voltage_range_max
+        self.voltage_range_min = voltage_range_min
+        self.frequency_range_min = frequency_range_min
+        self.frequency_range_max = frequency_range_max
+        self.max_payload = max_payload
+        self.voltage = voltage
+        self.signal_layer = signal_layer
+        self.cos_phi = cos_phi
+        self.fuse_current = fuse_current
+        self.fuse_rating = fuse_rating
+        self.orientation = orientation
+        self.wire_group = wire_group
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "Element"):
+        super()._read_xml(xml_node)
+        self.connector_type = xml_node.attrib.get("ConnectorType")
+        self.component_type: ComponentType = ComponentType(
+            xml_node.attrib.get("ComponentType")
+        )
+        self.signal_type = xml_node.attrib.get("SignalType")
+        self.pin_count = int(xml_node.attrib.get("PinCount"))
+        self.electrical_payload = float(xml_node.attrib.get("ElectricalPayLoad"))
+        self.voltage_range_max = float(xml_node.attrib.get("VoltageRangeMax"))
+        self.voltage_range_min = float(xml_node.attrib.get("VoltageRangeMin"))
+        self.frequency_range_max = float(xml_node.attrib.get("FrequencyRangeMax"))
+        self.frequency_range_min = float(xml_node.attrib.get("FrequencyRangeMin"))
+        self.max_payload = float(xml_node.attrib.get("MaxPayLoad"))
+        self.voltage = float(xml_node.attrib.get("Voltage"))
+        self.signal_layer = int(xml_node.attrib.get("SignalLayer"))
+        self.cos_phi = float(xml_node.attrib.get("CosPhi"))
+        self.fuse_current = float(xml_node.attrib.get("FuseCurrent"))
+        self.fuse_rating = FuseRating(xml_node.attrib.get("FuseRating"))
+        self.orientation = Orientation(xml_node.attrib.get("Orientation"))
+        self.wire_group = xml_node.attrib.get("WireGroup")
 
 
 class GeometryReference(BaseNode):
