@@ -243,3 +243,95 @@ def get_dmx_modes_info(gdtf_profile: "pygdtf.FixtureType" = None):
             }
         )
     return dmx_mode_list
+
+
+def calculate_complexity(gdtf_profile: "pygdtf.FixtureType" = None):
+    """Returns complexity rating of the device based on presumed amount of work while creating it"""
+
+    wheels_count = len(gdtf_profile.wheels)
+    slot_count = sum([len(wheel.wheel_slots) for wheel in gdtf_profile.wheels])
+    models_count = len(gdtf_profile.models)
+    emitters_count = len(gdtf_profile.emitters)
+    filters_measurements_count = len(
+        [
+            point
+            for filter in gdtf_profile.filters
+            for measurement in filter.measurements
+            for point in measurement.measurement_points
+        ]
+    )
+    emitters_measurements_count = len(
+        [
+            point
+            for emitter in gdtf_profile.emitters
+            for measurement in emitter.measurements
+            for point in measurement.measurement_points
+        ]
+    )
+    filters_count = len(gdtf_profile.filters)
+    modes_count = len(gdtf_profile.dmx_modes)
+    geometry_trees_count = 0
+    dmx_channels_count = 0
+    virtual_channels_count = 0
+    channel_functions_count = 0
+    channel_sets_count = 0
+    real_fade_count = 0
+    geometries = []
+    physical_from_to = 0
+
+    for mode in gdtf_profile.dmx_modes:
+        if mode.geometry not in geometries:
+            geometry_trees_count += 1
+            geometries.append(mode.geometry)
+
+        dmx_channels_breaks = pygdtf.utils.get_dmx_channels(gdtf_profile, mode.name)
+        virtual_channels_breaks = pygdtf.utils.get_virtual_channels(
+            gdtf_profile, mode.name
+        )
+        flattened_channels = [
+            channel
+            for break_channels in dmx_channels_breaks
+            for channel in break_channels
+        ]
+        dmx_channels_count += len(flattened_channels)
+        virtual_channels_count += len(virtual_channels_breaks)
+        channel_functions = [
+            function
+            for channel in flattened_channels
+            for function in channel.get("channel_functions", [])
+        ]
+        channel_functions_count += len(channel_functions)
+        physical_from_to = 0
+        for channel_function in channel_functions:
+            channel_sets_count += len(channel_function.channel_sets)
+            if channel_function.real_fade != 0:
+                real_fade_count += 1
+            if channel_function.physical_to != 0:
+                physical_from_to += 1
+            if channel_function.physical_from != 0:
+                physical_from_to += 1
+
+    data = (
+        ("Wheels", wheels_count, 5),
+        ("Wheel slots", slot_count, 4),
+        ("3D Models", models_count, 3),
+        ("Geometry trees", geometry_trees_count, 5),
+        ("Emitters", emitters_count, 5),
+        ("Filters", filters_count, 5),
+        ("Emitter measurements", emitters_measurements_count, 1),
+        ("Filter measurements", filters_measurements_count, 1),
+        ("DMX Modes", modes_count, 5),
+        ("DMX Channels", dmx_channels_count, 2),
+        ("Virtual Channels", virtual_channels_count, 2),
+        ("Channel Functions", channel_functions_count, 4),
+        ("Channel Sets", channel_sets_count, 1),
+        ("Real Fade values", real_fade_count, 6),
+        ("Physical from to values", physical_from_to, 6),
+    )
+    total_complexity = 0
+    data_out = ""
+    for name, value, complexity in data:
+        total_complexity += complexity * value
+        data_out += f"{name}: {value}\n"
+    # return total_complexity
+    return {"total": total_complexity, "data": data_out}
