@@ -10,5 +10,5 @@ setup(
     license="MIT",
     author="Jack Page",
     author_email="jdpboc98@gmail.com",
-    packages=["pygdtf"],
+    packages=["pygdtf", "pygdtf.utils"],
 )
