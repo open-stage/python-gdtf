@@ -30,7 +30,7 @@ python -m pip install https://codeload.github.com/open-stage/python-gdtf/zip/ref
 import pygdtf
 
 # parse a GDTF file
-gdtf_fixture =pygdtf.FixtureType("tests/BlenderDMX@LED_PAR_64_RGBW@v0.3.gdtf")
+gdtf_fixture = pygdtf.FixtureType("BlenderDMX@LED_PAR_64_RGBW@v0.3.gdtf")
 
 # get info about DMX Modes:
 pygdtf.utils.get_dmx_modes_info(gdtf_fixture)
