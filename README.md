@@ -26,8 +26,54 @@ python -m pip install https://codeload.github.com/open-stage/python-gdtf/zip/ref
 ## Usage
 
 ```python
+# import
 import pygdtf
-gdtf_fixture = pygdtf.FixtureType("gdtf_file.gdtf")
+
+# parse a GDTF file
+gdtf_fixture =pygdtf.FixtureType("tests/BlenderDMX@LED_PAR_64_RGBW@v0.3.gdtf")
+
+# get info about DMX Modes:
+pygdtf.utils.get_dmx_modes_info(gdtf_fixture)
+
+# [{'mode_id': 0,
+#  'mode_name': 'Default',
+#  'mode_dmx_channel_count': 5,
+#  'mode_virtual_channel_count': 0}]
+
+# get list of DMX channels with geometries, channels functions
+pygdtf.utils.get_dmx_channels(gdtf_fixture, "Default")
+
+# [[{'dmx': 1,
+#   'id': 'Dimmer',
+#   'default': 0,
+#   'geometry': 'Beam',
+#   'break': 1,
+#   'channel_functions': [<pygdtf.ChannelFunction at 0x7f122435c8b0>]},
+#  {'dmx': 2,
+#   'id': 'ColorAdd_R',
+#   'default': 255,
+#   'geometry': 'Beam',
+#   'break': 1,
+#   'channel_functions': [<pygdtf.ChannelFunction at 0x7f122435e860>]},
+#  {'dmx': 3,
+#   'id': 'ColorAdd_G',
+#   'default': 255,
+#   'geometry': 'Beam',
+#   'break': 1,
+#   'channel_functions': [<pygdtf.ChannelFunction at 0x7f122435f0d0>]},
+#  {'dmx': 4,
+#   'id': 'ColorAdd_B',
+#   'default': 255,
+#   'geometry': 'Beam',
+#   'break': 1,
+#   'channel_functions': [<pygdtf.ChannelFunction at 0x7f1224e56c20>]},
+#  {'dmx': 5,
+#   'id': 'ColorAdd_W',
+#   'default': 0,
+#   'geometry': 'Beam',
+#   'break': 1,
+#   'channel_functions': [<pygdtf.ChannelFunction at 0x7f122435fdf0>]}]]
+
 ```
 
 See [BlenderDMX](https://github.com/open-stage/blender-dmx) and
@@ -44,7 +90,7 @@ reference implementation.
 - do not use geometry names for anything related to function of the geometry
   (yoke, pan, tilt, head), use attached GDTF attributes ("Pan", "Tilt")
 
-- only Beam or Camera geometry types are currently used special types of
+- only Beam, Camera and Wiring geometry types are currently used special types of
   geometry. Other types (Axis...) are not really relevant as even Normal
   geometry can have for example "Pan" GDTF attribute attached, to indicate
   movement.
