@@ -155,6 +155,8 @@ class DmxAddress:
             self.universe = 1
             self.address = int(str_repr)
 
+    def __str__(self):
+        return f"Universe: {self.universe}, Address: {self.address}"
 
 class DmxValue:
     def __init__(self, str_repr):
