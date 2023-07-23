@@ -55,7 +55,7 @@ class FixtureType:
         self.manufacturer = self._root.get("Manufacturer")
         self.description = self._root.get("Description")
         self.fixture_type_id = self._root.get("FixtureTypeID")
-        self.thumbnail = self._root.get("Thumbnail")
+        self.thumbnail = self._root.get("Thumbnail", "")
         self.ref_ft = self._root.get("RefFT")
         # For each attribute, we first check for the existence of the collect node
         # If such a node doesn't exist, then none of the children will exist and
@@ -123,6 +123,7 @@ class FixtureType:
             ]
         else:
             self.cri_groups = []
+        self.models = []
         if model_collect := self._root.find("Models"):
             self.models = [Model(xml_node=i) for i in model_collect.findall("Model")]
         for model in self.models:
@@ -748,6 +749,9 @@ class Break(BaseNode):
     def _read_xml(self, xml_node: "Element"):
         self.dmx_offset = DmxAddress(xml_node.attrib.get("DMXOffset"))
         self.dmx_break = int(xml_node.attrib.get("DMXBreak", 1))
+
+    def __str__(self):
+        return f"Break: {self.dmx_break}, Offset: {self.dmx_offset}"
 
 
 class DmxMode(BaseNode):
