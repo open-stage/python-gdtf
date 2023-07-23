@@ -108,6 +108,8 @@ def get_channels_for_geometry(
         name = geometry.geometry
 
     for channel in get_channels_by_geometry(name, dmx_channels):
+        # Reference dmx break overwrite is handled by get_dmx_channels, maybe it
+        # could/should be handled here?
         channel_list.append((channel, geometry))
     if hasattr(geometry, "geometries"):
         for sub_geometry in geometry.geometries:
@@ -157,66 +159,84 @@ def get_dmx_channels(
     dmx_mode = None
     dmx_mode = get_dmx_mode_by_name(gdtf_profile, mode)
     root_geometry = get_geometry_by_name(gdtf_profile, dmx_mode.geometry)
+
+    # get a flat list of all channels and their linked geometries
+
     device_channels = get_channels_for_geometry(
         gdtf_profile, root_geometry, dmx_mode.dmx_channels, []
     )
 
     dmx_channels: List[Any] = []
 
-    for channel, geometry in device_channels:
-        if channel.offset is None:
+    for channel, geometry in device_channels:  # process the flat list:
+        if channel.offset is None:  # skip virtual channels
             continue
-        if len(dmx_channels) < channel.dmx_break:
-            dmx_channels = dmx_channels + [[]] * (channel.dmx_break - len(dmx_channels))
+        channel_break = channel.dmx_break
+        if channel.dmx_break == "Overwrite":
+            channel_break = geometry.breaks[0].dmx_break
 
-        break_channels = dmx_channels[channel.dmx_break - 1]  # off by one...
+        if len(dmx_channels) < channel_break:
+            # create sublist for each group of dmx breaks,
+            # add amount of lists minus already existing lists:
+            dmx_channels = dmx_channels + [[]] * (channel_break - len(dmx_channels))
+
+        # get list of channels of a particular break:
+        break_channels = dmx_channels[channel_break - 1]  # off by one...
 
         break_addition = 0
 
         if hasattr(geometry, "breaks"):
-            dmx_offset = get_address_by_break(geometry.breaks, channel.dmx_break)
+            # a dmx address offset defines how much this channel is offset from it's actual address
+            dmx_offset = get_address_by_break(geometry.breaks, channel_break)
             if dmx_offset is not None:
-                break_addition = dmx_offset.address - 1
+                break_addition = dmx_offset.address - 1  # here is also off by one
 
-        offset0 = channel.offset[0] + break_addition
-        offset1 = 0
-        # TODO: rework here to support ultra and uber
+        # TODO: rework below to support ultra and uber
+        offset_coarse = channel.offset[0] + break_addition
+        offset_fine = 0
 
         if len(channel.offset) > 1:
-            offset1 = channel.offset[1] + break_addition
+            offset_fine = channel.offset[1] + break_addition
 
-        max_offset = max([offset0, offset1])
+        max_offset = max([offset_coarse, offset_fine])
 
-        # TODO: fix a bug that causes placeholder dicts to be generated for then next (incorrect) break
         if len(break_channels) < max_offset:
             # print(len(break_channels), break_channels)
             break_channels = break_channels + [
                 {"dmx": "", "id": "", "default": 0, "geometry": "", "break": ""}
             ] * (max_offset - len(break_channels))
 
-        break_channels[offset0 - 1] = {
-            "dmx": offset0,
+        break_channels[offset_coarse - 1] = {
+            "dmx": offset_coarse,
             "id": str(channel.logical_channels[0].channel_functions[0].attribute),
             "default": getValue(
                 channel.logical_channels[0].channel_functions[0].default
             ),
             "geometry": geometry.name,
-            "break": channel.dmx_break,
+            "break": channel_break,
             "channel_functions": channel.logical_channels[0].channel_functions,
         }
-        if offset1 > 0:
-            break_channels[offset1 - 1] = {
-                "dmx": offset1,
+        if offset_fine > 0:
+            break_channels[offset_fine - 1] = {
+                "dmx": offset_fine,
                 "id": "+"
                 + str(channel.logical_channels[0].channel_functions[0].attribute),
                 "default": getValue(
                     channel.logical_channels[0].channel_functions[0].default, True
                 ),
                 "geometry": geometry.name,
-                "break": channel.dmx_break,
+                "break": channel_break,
                 "channel_functions": channel.logical_channels[0].channel_functions,
             }
-        dmx_channels[channel.dmx_break - 1] = break_channels
+        dmx_channels[channel_break - 1] = break_channels
+
+    # If the second (and more) break addresses follow the previous break addresses,
+    # there might be some empty placeholder dmx channel objects. Remove them now:
+
+    for index, break_list in enumerate(dmx_channels):
+        dmx_channels[index] = [
+            channel for channel in break_list if channel.get("id", "") != ""
+        ]
 
     # This returns multiple lists of channel arrays. Each list is for one DMX Break, these
     # can be patched onto different DMX addresses. Or, these lists can be flatten into one
@@ -274,7 +294,6 @@ def get_beam_geometries(
             geometry_list,
         )
 
-
     if hasattr(geometry, "geometries"):
         for sub_geometry in geometry.geometries:
             geometry_list = get_beam_geometries(
@@ -286,7 +305,31 @@ def get_beam_geometries(
 def calculate_complexity(gdtf_profile: "pygdtf.FixtureType" = None):
     """Returns complexity rating of the device based on presumed amount of work while creating it"""
 
+    thumbnails_count = 0
+    thumbnails_count += (
+        1 if f"{gdtf_profile.thumbnail}.svg" in gdtf_profile._package.namelist() else 0
+    )
+    thumbnails_count += (
+        1 if f"{gdtf_profile.thumbnail}.png" in gdtf_profile._package.namelist() else 0
+    )
     wheels_count = len(gdtf_profile.wheels)
+    gobos_count = len(
+        [
+            slot
+            for wheel in gdtf_profile.wheels
+            for slot in wheel.wheel_slots
+            if slot.media_file_name.name is not None
+        ]
+    )
+    facets_count = len(
+        [
+            facet
+            for wheel in gdtf_profile.wheels
+            for slot in wheel.wheel_slots
+            if len(slot.facets)
+            for facet in slot.facets
+        ]
+    )
     slot_count = sum([len(wheel.wheel_slots) for wheel in gdtf_profile.wheels])
     models_count = len(gdtf_profile.models)
     emitters_count = len(gdtf_profile.emitters)
@@ -338,6 +381,7 @@ def calculate_complexity(gdtf_profile: "pygdtf.FixtureType" = None):
             for channel in flattened_channels
             for function in channel.get("channel_functions", [])
         ]
+
         channel_functions_count += len(channel_functions)
         physical_from_to = 0
         for channel_function in channel_functions:
@@ -351,6 +395,9 @@ def calculate_complexity(gdtf_profile: "pygdtf.FixtureType" = None):
 
     data = (
         ("Wheels", wheels_count, 5),
+        ("Thumbnails", thumbnails_count, 5),
+        ("Gobo images", gobos_count, 5),
+        ("Prism Facets", facets_count, 5),
         ("Wheel slots", slot_count, 4),
         ("3D Models", models_count, 3),
         ("Geometry trees", geometry_trees_count, 5),
