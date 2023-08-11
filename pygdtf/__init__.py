@@ -146,6 +146,10 @@ class FixtureType:
                 self.geometries.append(GeometryFilterGobo(xml_node=i))
             for i in geometry_collect.findall("FilterShaper"):
                 self.geometries.append(GeometryFilterShaper(xml_node=i))
+            for i in geometry_collect.findall("MediaServerMaster"):
+                self.geometries.append(GeometryMediaServerMaster(xml_node=i))
+            for i in geometry_collect.findall("MediaServerLayer"):
+                self.geometries.append(GeometryMediaServerLayer(xml_node=i))
             for i in geometry_collect.findall("MediaServerCamera"):
                 self.geometries.append(GeometryMediaServerCamera(xml_node=i))
             for i in geometry_collect.findall("Inventory"):
@@ -551,12 +555,16 @@ class Geometry(BaseNode):
             self.geometries.append(GeometryFilterColor(xml_node=i))
         for i in xml_node.findall("FilterGobo"):
             self.geometries.append(GeometryFilterGobo(xml_node=i))
+        for i in xml_node.findall("FilterShaper"):
+            self.geometries.append(GeometryFilterShaper(xml_node=i))
+        for i in xml_node.findall("MediaServerMaster"):
+            self.geometries.append(GeometryMediaServerMaster(xml_node=i))
+        for i in xml_node.findall("MediaServerLayer"):
+            self.geometries.append(GeometryMediaServerLayer(xml_node=i))
         for i in xml_node.findall("MediaServerCamera"):
             self.geometries.append(GeometryMediaServerCamera(xml_node=i))
         for i in xml_node.findall("Inventory"):
             self.geometries.append(GeometryInventory(xml_node=i))
-        for i in xml_node.findall("FilterShaper"):
-            self.geometries.append(GeometryFilterShaper(xml_node=i))
         for i in xml_node.findall("Beam"):
             self.geometries.append(GeometryBeam(xml_node=i))
         for i in xml_node.findall("WiringObject"):
@@ -585,6 +593,14 @@ class GeometryFilterGobo(Geometry):
 
 
 class GeometryFilterShaper(Geometry):
+    pass
+
+
+class GeometryMediaServerLayer(Geometry):
+    pass
+
+
+class GeometryMediaServerMaster(Geometry):
     pass
 
 
