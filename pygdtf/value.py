@@ -98,6 +98,7 @@ class Orientation(Enum):
     permitted = ["Left", "Right", "Top", "Bottom"]
     _default = "Left"
 
+
 class ComponentType(Enum):
     permitted = [
         "Input",
@@ -158,6 +159,7 @@ class DmxAddress:
     def __str__(self):
         return f"Universe: {self.universe}, Address: {self.address}"
 
+
 class DmxValue:
     def __init__(self, str_repr):
         if str_repr == "None":
@@ -176,9 +178,15 @@ class ColorCIE:
         self.y = y
         self.z = z
         if str_repr is not None:
-            self.x = float(str_repr.split(",")[0])
-            self.y = float(str_repr.split(",")[1])
-            self.Y = float(str_repr.split(",")[2])
+            try:
+                self.x = float(str_repr.split(",")[0])
+                self.y = float(str_repr.split(",")[1])
+                self.Y = float(str_repr.split(",")[2])
+            except:
+                # Fail gracefully with default color (White)
+                self.x = 0.3127
+                self.y = 0.3290
+                self.z = 1.0000
 
 
 class Rotation:
