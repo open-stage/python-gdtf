@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import List, Optional
+from typing import List, Optional, Union
 
 
 # Data type that only allows a specific set of values, if given a value
