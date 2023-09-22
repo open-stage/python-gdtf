@@ -5,7 +5,7 @@ Python library for [General Device Type Format](https://gdtf-share.com/)
 GDTF specification as per https://gdtf.eu/gdtf/prologue/introduction/
 
 See source code for documentation. Naming conventions, in general, are
-identical to that on the GDTF developer wiki, except CamelCase is replaced with
+identical to that on the GDTF, CamelCase is replaced with
 underscore_delimiters.
 
 ## Credits
@@ -15,9 +15,21 @@ Page](https://github.com/jackdpage). Forked to
 [Open-Stage](https://github.com/open-stage), used for example by
 [BlenderDMX](https://github.com/open-stage/blender-dmx).
 
+[Source code](https://github.com/open-stage/python-gdtf)
+
+[PyPi page](https://pypi.org/project/pygdtf/)
+
+[![Pytest](https://github.com/open-stage/python-gdtf/actions/workflows/run-tests.yaml/badge.svg)](https://github.com/open-stage/python-gdtf/actions/workflows/run-tests.yaml)
+
+[![Check links in markdown](https://github.com/open-stage/python-gdtf/actions/workflows/check-links.yaml/badge.svg)](https://github.com/open-stage/python-gdtf/actions/workflows/check-links.yaml)
+
 ## Installation
 
-To install latest master from this git repository, run pip:
+```bash
+pip install pygdtf
+```
+
+To install latest version from this git repository, run pip:
 
 ```bash
 python -m pip install https://codeload.github.com/open-stage/python-gdtf/zip/refs/heads/master
@@ -82,10 +94,12 @@ reference implementation.
 
 ## Usage principles
 
-- do not presume that plain layout of DMX Channels in a DMX Mode is defining
-  the DMX footprint of the device. Geometry references are (frequently) used to
-  re-use parts of the device. This means that a channel(s) defined once can be
-  multiplied, over several times duplicated geometry (tree).
+- for list of channels, use `pygdtf.utils.get_dmx_channels` as per example
+  above, do not presume that plain layout of DMX Channels in a DMX Mode is
+  defining the DMX footprint of the device. Geometry references are
+  (frequently) used to re-use parts of the device. This means that a channel(s)
+  defined once can be multiplied, over several times duplicated geometry
+  (tree).
 
 - do not use geometry names for anything related to function of the geometry
   (yoke, pan, tilt, head), use attached GDTF attributes ("Pan", "Tilt")
@@ -97,7 +111,7 @@ reference implementation.
 
 ## Status
 
-- GDTF 1.1 with some small portions of GDTF 1.2 being included
+- GDTF 1.1 with some portions of GDTF 1.2 being included
 
 ## Development
 

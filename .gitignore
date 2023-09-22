@@ -1,4 +1,8 @@
+build
+dist
 __pycache__
 .python-version
-build/
+.mypy_cache
+.pytest_cache
+devel/
 *.egg-info/
