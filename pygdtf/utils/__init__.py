@@ -203,15 +203,24 @@ def get_dmx_channels(
         if len(break_channels) < max_offset:
             # print(len(break_channels), break_channels)
             break_channels = break_channels + [
-                {"dmx": "", "id": "", "default": 0, "geometry": "", "break": ""}
+                {
+                    "dmx": "",
+                    "id": "",
+                    "default": 0,
+                    "highlight": None,
+                    "geometry": "",
+                    "break": "",
+                }
             ] * (max_offset - len(break_channels))
-
+        print("channel highlight", channel.highlight, channel.offset)
         break_channels[offset_coarse - 1] = {
             "dmx": offset_coarse,
-            "id": str(channel.logical_channels[0].channel_functions[0].attribute),
-            "default": getValue(
-                channel.logical_channels[0].channel_functions[0].default
-            ),
+            "id": str(channel.logical_channels[0].attribute),
+            "offset": channel.offset,
+            "default": getValue(channel.default),
+            "highlight": getValue(channel.highlight)
+            if channel.highlight is not None
+            else None,
             "geometry": geometry.name,
             "break": channel_break,
             "channel_functions": channel.logical_channels[0].channel_functions,
@@ -219,11 +228,12 @@ def get_dmx_channels(
         if offset_fine > 0:
             break_channels[offset_fine - 1] = {
                 "dmx": offset_fine,
-                "id": "+"
-                + str(channel.logical_channels[0].channel_functions[0].attribute),
-                "default": getValue(
-                    channel.logical_channels[0].channel_functions[0].default, True
-                ),
+                "offset": channel.offset,
+                "id": "+" + str(channel.logical_channels[0].attribute),
+                "default": getValue(channel.default, True),
+                "highlight": getValue(channel.highlight)
+                if channel.highlight is not None
+                else None,
                 "geometry": geometry.name,
                 "break": channel_break,
                 "channel_functions": channel.logical_channels[0].channel_functions,
