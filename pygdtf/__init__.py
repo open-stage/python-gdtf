@@ -2,7 +2,7 @@ from typing import List, Union, Optional
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 import zipfile
-from pygdtf.value import *  # type: ignore
+from .value import *  # type: ignore
 from .utils import *
 
 # Standard predefined colour spaces: R, G, B, W-P
@@ -846,6 +846,7 @@ class DmxChannel(BaseNode):
         offset: List[int] = None,
         default: "DmxValue" = DmxValue("0/1"),
         highlight: Optional["DmxValue"] = None,
+        initial_function: "NodeLink" = None,
         geometry: Optional[str] = None,
         logical_channels: List["LogicalChannel"] = None,
         *args,
@@ -855,6 +856,7 @@ class DmxChannel(BaseNode):
         self.offset = offset
         self.default = default
         self.highlight = highlight
+        self.initial_function = initial_function
         self.geometry = geometry
         self.logical_channels = logical_channels
         super().__init__(*args, **kwargs)
@@ -869,16 +871,32 @@ class DmxChannel(BaseNode):
             self.offset = None
         else:
             self.offset = [int(i) for i in xml_node.attrib.get("Offset").split(",")]
+
+        # obsoleted by initial function in GDTF 1.2
         self.default = DmxValue(xml_node.attrib.get("Default", "0/1"))
 
         highlight_node = xml_node.attrib.get("Highlight")
-        if highlight_node:
-            self.highlight = DmxValue(highlight_node)
+        if highlight_node is not None:
+            highlight_value = xml_node.attrib.get("Highlight", "0/1")
+
+            print("highlight value", highlight_value)
+            if highlight_value != "None":
+                self.highlight = DmxValue(highlight_value)
 
         self.geometry = xml_node.attrib.get("Geometry")
         self.logical_channels = [
             LogicalChannel(xml_node=i) for i in xml_node.findall("LogicalChannel")
         ]
+
+        initial_function_node = xml_node.attrib.get("InitialFunction")
+        if initial_function_node:
+            self.initial_function = NodeLink(
+                xml_node, xml_node.attrib.get("InitialFunction")
+            )
+            for logical_channel in self.logical_channels:
+                for channel_function in logical_channel.channel_functions:
+                    if channel_function.name == self.initial_function:
+                        self.default = channel_function.default
 
 
 class LogicalChannel(BaseNode):
