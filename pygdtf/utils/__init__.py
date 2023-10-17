@@ -212,7 +212,6 @@ def get_dmx_channels(
                     "break": "",
                 }
             ] * (max_offset - len(break_channels))
-        print("channel highlight", channel.highlight, channel.offset)
         break_channels[offset_coarse - 1] = {
             "dmx": offset_coarse,
             "id": str(channel.logical_channels[0].attribute),
@@ -256,7 +255,9 @@ def get_dmx_channels(
     return dmx_channels
 
 
-def get_dmx_modes_info(gdtf_profile: "pygdtf.FixtureType" = None):
+def get_dmx_modes_info(
+    gdtf_profile: "pygdtf.FixtureType" = None, include_channels=False
+):
     dmx_mode_list = []
 
     for idx, mode in enumerate(gdtf_profile.dmx_modes):
@@ -266,15 +267,22 @@ def get_dmx_modes_info(gdtf_profile: "pygdtf.FixtureType" = None):
         dmx_channels_flattened = [
             channel for break_channels in dmx_channels for channel in break_channels
         ]
-        mode_virtual_channel_count = get_virtual_channels(gdtf_profile, mode_name)
-        dmx_mode_list.append(
-            {
-                "mode_id": mode_id,
-                "mode_name": mode_name,
-                "mode_dmx_channel_count": len(dmx_channels_flattened),
-                "mode_virtual_channel_count": len(mode_virtual_channel_count),
-            }
-        )
+        virtual_channels = get_virtual_channels(gdtf_profile, mode_name)
+        dmx_mode_info = {
+            "mode_id": mode_id,
+            "mode_name": mode_name,
+            "mode_dmx_channel_count": len(dmx_channels_flattened),
+            "mode_virtual_channel_count": len(virtual_channels),
+            "mode_dmx_breaks_count": len(dmx_channels),
+        }
+        if include_channels:
+            dmx_mode_info.update(
+                {
+                    "mode_dmx_channels": dmx_channels,
+                    "mode_virtual_channels": virtual_channels,
+                }
+            )
+        dmx_mode_list.append(dmx_mode_info)
     return dmx_mode_list
 
 
