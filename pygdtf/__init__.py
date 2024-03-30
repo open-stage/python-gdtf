@@ -55,7 +55,7 @@ class FixtureType:
         self.manufacturer = self._root.get("Manufacturer")
         self.description = self._root.get("Description")
         self.fixture_type_id = self._root.get("FixtureTypeID")
-        self.thumbnail = self._root.get("Thumbnail", "")
+        self.thumbnail = self._root.get("Thumbnail", "").encode("utf-8").decode("cp437")
         self.ref_ft = self._root.get("RefFT")
         # For each attribute, we first check for the existence of the collect node
         # If such a node doesn't exist, then none of the children will exist and
@@ -327,7 +327,7 @@ class WheelSlot(BaseNode):
         self.name = xml_node.attrib.get("Name")
         self.color = ColorCIE(str_repr=xml_node.attrib.get("Color"))
         self.filter = NodeLink("FilterCollect", xml_node.attrib.get("Filter"))
-        self.media_file_name = Resource(xml_node.attrib.get("MediaFileName"), "png")
+        self.media_file_name = Resource(xml_node.attrib.get("MediaFileName", ""), "png")
         self.facets = [PrismFacet(xml_node=i) for i in xml_node.findall("Facet")]
 
 
@@ -540,7 +540,7 @@ class Model(BaseNode):
         self.width = float(xml_node.attrib.get("Width", 0))
         self.height = float(xml_node.attrib.get("Height", 0))
         self.primitive_type = PrimitiveType(xml_node.attrib.get("PrimitiveType"))
-        self.file = Resource(xml_node.attrib.get("File"))
+        self.file = Resource(xml_node.attrib.get("File", ""))
 
 
 class Geometry(BaseNode):
