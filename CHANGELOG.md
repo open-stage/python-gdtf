@@ -1,5 +1,16 @@
 ### Changelog
 
+#### Version 1.0.4
+
+* Handle faulty XML files with extra null byte
+* Add Laser geometry
+* Handle encoded thumbnail file names
+* Do not return fixture type when requesting a geometry
+* Add additional BeamTypes
+* Make channels optional in get_dmx_modes_info
+* Add python dev versions to tests
+* Improved channel/function defaults, added highlights
+
 #### Version 1.0.3
 * First release under Open-Stage organization
     * add CI/CD pytest testing + mypy
