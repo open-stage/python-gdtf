@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="pygdtf",
-    version="1.0.3",
+    version="1.0.4",
     description="General Device Type Format library for Python",
     long_description=long_description,
     long_description_content_type="text/markdown",
