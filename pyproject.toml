@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name="pygdtf"
+dynamic = ["version"]
+readme = "README.md"
+description="General Device Type Format (GDTF) library for Python"
+requires-python = ">=3.8"
+authors = [
+  {name = "vanous", email = "noreply@nodomain.com"},
+  {name = "Jack Page"},
+]
+maintainers = [
+  {name = "vanous", email = "noreply@nodomain.com"},
+]
+keywords = ["MVR", "GDTF"]
+license = {text = "MIT License"}
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python"
+]
+
+[tool.setuptools]
+packages = ["pygdtf", "pygdtf.utils"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pygdtf.__version__"}
+
+[project.urls]
+Repository = "https://github.com/open-stage/python-gdtf.git"
+Changelog = "https://github.com/open-stage/python-gdtf/blob/master/CHANGELOG.md"
+
