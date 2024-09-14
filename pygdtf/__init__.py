@@ -40,13 +40,16 @@ def _find_root(pkg: "zipfile.ZipFile") -> "ElementTree.Element":
 
 
 class FixtureType:
-    def __init__(self, path=None):
+    def __init__(self, path=None, dsc_file: Union[str, None] = None):
         self._package = None
         self._root = None
         if path is not None:
             self._package = zipfile.ZipFile(path, "r")
         if self._package is not None:
             self._gdtf = _find_root(self._package)
+            self._root = self._gdtf.find("FixtureType")
+        elif dsc_file is not None:
+            self._gdtf = ElementTree.parse(dsc_file).getroot()
             self._root = self._gdtf.find("FixtureType")
         if self._root is not None:
             self._read_xml()
