@@ -34,7 +34,7 @@ def _find_root(pkg: "zipfile.ZipFile") -> "ElementTree.Element":
 
     with pkg.open("description.xml", "r") as f:
         description_str = f.read().decode("utf-8")
-        if description_str[-1]=="\x00": # this should not happen, but...
+        if description_str[-1] == "\x00":  # this should not happen, but...
             description_str = description_str[:-1]
     return ElementTree.fromstring(description_str)
 
@@ -691,6 +691,7 @@ class GeometryBeam(Geometry):
             xml_node.attrib.get("ColorRenderingIndex", 100)
         )
 
+
 class GeometryLaser(Geometry):
     def __init__(
         self,
@@ -724,7 +725,7 @@ class GeometryLaser(Geometry):
     def _read_xml(self, xml_node: "Element"):
         super()._read_xml(xml_node)
         self.color_type = ColorType(xml_node.attrib.get("ColorType"))
-        self.color = float(xml_node.attrib.get("Color", 530)) # Green
+        self.color = float(xml_node.attrib.get("Color", 530))  # Green
         self.output_strength = float(xml_node.attrib.get("OutputStrength", 1))
         self.emitter = NodeLink("EmitterCollect", xml_node.attrib.get("Emitter"))
         self.beam_diameter = float(xml_node.attrib.get("BeamDiameter", 0.005))
@@ -733,9 +734,8 @@ class GeometryLaser(Geometry):
         self.scan_angle_pan = float(xml_node.attrib.get("ScanAnglePan", 30))
         self.scan_angle_tilt = float(xml_node.attrib.get("ScanAngleTilt", 30))
         self.scan_speed = float(xml_node.attrib.get("ScanSpeed", 0))
-        self.protocols = [
-            Protocol(xml_node=i) for i in xml_node.findall("Protocol")
-        ]
+        self.protocols = [Protocol(xml_node=i) for i in xml_node.findall("Protocol")]
+
 
 class Protocol(BaseNode):
     def __init__(
@@ -752,6 +752,7 @@ class Protocol(BaseNode):
 
     def __str__(self):
         return f"{self.name}"
+
 
 class GeometryWiringObject(Geometry):
     def __init__(

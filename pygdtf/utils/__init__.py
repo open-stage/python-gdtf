@@ -176,7 +176,10 @@ def get_dmx_channels(
             continue
         channel_break = channel.dmx_break
 
-        if isinstance(geometry, pygdtf.GeometryReference) and channel.dmx_break == "Overwrite":
+        if (
+            isinstance(geometry, pygdtf.GeometryReference)
+            and channel.dmx_break == "Overwrite"
+        ):
             if len(geometry.breaks):
                 channel_break = geometry.breaks[0].dmx_break
             else:
