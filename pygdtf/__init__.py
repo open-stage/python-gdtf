@@ -160,10 +160,17 @@ class FixtureType:
         if model_collect := self._root.find("Models"):
             self.models = [Model(xml_node=i) for i in model_collect.findall("Model")]
         for model in self.models:
-            if f"models/gltf/{model.file.name}.glb" in self._package.namelist():
-                model.file.extension = "glb"
-            else:
-                model.file.extension = "3ds"
+            if self._package is not None:
+                if f"models/gltf/{model.file.name}.glb" in self._package.namelist():
+                    model.file.extension = "glb"
+                    model.file.crc = self._package.getinfo(
+                        f"models/gltf/{model.file.name}.glb"
+                    ).CRC
+                elif f"models/gltf/{model.file.name}.3ds" in self._package.namelist():
+                    model.file.extension = "3ds"
+                    model.file.crc = self._package.getinfo(
+                        f"models/gltf/{model.file.name}.3ds"
+                    ).CRC
 
         self.geometries = []
         if geometry_collect := self._root.find("Geometries"):

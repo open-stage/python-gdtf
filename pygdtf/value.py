@@ -144,11 +144,12 @@ class RelationType(Enum):
 
 
 class Resource:
-    def __init__(self, name, extension=None):
+    def __init__(self, name, extension=None, crc=None):
         self.name = name
         if name is not None:
             self.name = self.name.encode("utf-8").decode("cp437")
         self.extension = extension
+        self.crc = crc
 
     def __str__(self):
         return ".".join([self.name, self.extension])
