@@ -202,6 +202,14 @@ class FixtureType:
                 self.geometries.append(GeometryReference(xml_node=i))
             for i in geometry_collect.findall("Laser"):
                 self.geometries.append(GeometryLaser(xml_node=i))
+            for i in geometry_collect.findall("Support"):
+                self.geometries.append(GeometrySupport(xml_node=i))
+            for i in geometry_collect.findall("Structure"):
+                self.geometries.append(GeometryStructure(xml_node=i))
+            for i in geometry_collect.findall("Display"):
+                self.geometries.append(GeometryDisplay(xml_node=i))
+            for i in geometry_collect.findall("Magnet"):
+                self.geometries.append(GeometryMagnet(xml_node=i))
         if dmx_mode_collect := self._root.find("DMXModes"):
             self.dmx_modes = [
                 DmxMode(xml_node=i) for i in dmx_mode_collect.findall("DMXMode")
@@ -617,6 +625,14 @@ class Geometry(BaseNode):
             self.geometries.append(GeometryReference(xml_node=i))
         for i in xml_node.findall("Laser"):
             self.geometries.append(GeometryLaser(xml_node=i))
+        for i in xml_node.findall("Structure"):
+            self.geometries.append(GeometryStructure(xml_node=i))
+        for i in xml_node.findall("Support"):
+            self.geometries.append(GeometrySupport(xml_node=i))
+        for i in xml_node.findall("Magnet"):
+            self.geometries.append(GeometryMagnet(xml_node=i))
+        for i in xml_node.findall("Display"):
+            self.geometries.append(GeometryDisplay(xml_node=i))
 
     def __str__(self):
         return f"{self.name} ({self.model})"
@@ -646,11 +662,119 @@ class GeometryMediaServerLayer(Geometry):
     pass
 
 
+class GeometryMediaServerCamera(Geometry):
+    pass
+
+
 class GeometryMediaServerMaster(Geometry):
     pass
 
 
-class GeometryMediaServerCamera(Geometry):
+class GeometryDisplay(Geometry):
+    def __init__(self, texture: str = "", *args, **kwargs):
+        self.texture = texture
+
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "element"):
+        super()._read_xml(xml_node)
+        self.texture = xml_node.attrib.get("texture", "")
+
+
+class GeometryStructure(Geometry):
+    def __init__(
+        self,
+        linked_geometry: str = "",
+        structure_type: StructureType = StructureType(None),
+        cross_section_type: CrossSectionType = CrossSectionType(None),
+        cross_section_height: float = 0,
+        cross_section_wall_thickness: float = 0,
+        truss_cross_section: str = "",
+        *args,
+        **kwargs,
+    ):
+        self.linked_geometry = linked_geometry
+        self.structure_type = structure_type
+        self.cross_section_type = cross_section_type
+        self.cross_section_height = cross_section_height
+        self.cross_section_wall_thickness = cross_section_wall_thickness
+        self.truss_cross_section = truss_cross_section
+
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "element"):
+        super()._read_xml(xml_node)
+        self.linked_geometry = xml_node.attrib.get("LinkedGeometry")
+        self.structure_type = StructureType(xml_node.attrib.get("StructureType"))
+        self.cross_section_type = CrossSectionType(
+            xml_node.attrib.get("CrossSectionType")
+        )
+        self.cross_section_height = float(xml_node.attrib.get("CrossSectionHeight"))
+        self.cross_section_wall_thickness = float(
+            xml_node.attrib.get("CrossSectionWallThickness")
+        )
+        self.truss_cross_section = xml_node.attrib.get("TrussCrossSection")
+
+
+class GeometrySupport(Geometry):
+    def __init__(
+        self,
+        support_type: SupportType = SupportType(None),
+        rope_cross_section: str = "",
+        rope_offset: Vector3 = Vector3(0),
+        capacity_x: float = 0,
+        capacity_y: float = 0,
+        capacity_z: float = 0,
+        capacity_xx: float = 0,
+        capacity_yy: float = 0,
+        capacity_zz: float = 0,
+        resistance_x: float = 0,
+        resistance_y: float = 0,
+        resistance_z: float = 0,
+        resistance_xx: float = 0,
+        resistance_yy: float = 0,
+        resistance_zz: float = 0,
+        *args,
+        **kwargs,
+    ):
+        self.support_type = support_type
+        self.rope_cross_section = rope_cross_section
+        self.rope_offset = rope_offset
+        self.capacity_x = capacity_x
+        self.capacity_y = capacity_y
+        self.capacity_z = capacity_z
+        self.capacity_xx = capacity_xx
+        self.capacity_yy = capacity_yy
+        self.capacity_zz = capacity_zz
+        self.resistance_x = resistance_x
+        self.resistance_y = resistance_y
+        self.resistance_z = resistance_z
+        self.resistance_xx = resistance_xx
+        self.resistance_yy = resistance_yy
+        self.resistance_zz = resistance_zz
+
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "element"):
+        super()._read_xml(xml_node)
+        self.support_type = SupportType(xml_node.attrib.get("SupportType"))
+        self.rope_cross_section = xml_node.attrib.get("RopeCrossSection")
+        self.rope_offset = Vector3(xml_node.attrib.get("RopeOffset", 0))
+        self.capacity_x = float(xml_node.attrib.get("CapacityX", 0))
+        self.capacity_y = float(xml_node.attrib.get("CapacityY", 0))
+        self.capacity_z = float(xml_node.attrib.get("CapacityZ", 0))
+        self.capacity_xx = float(xml_node.attrib.get("CapacityXX", 0))
+        self.capacity_yy = float(xml_node.attrib.get("CapacityYY", 0))
+        self.capacity_zz = float(xml_node.attrib.get("CapacityZZ", 0))
+        self.resistance_x = float(xml_node.attrib.get("ResistanceX", 0))
+        self.resistance_y = float(xml_node.attrib.get("ResistanceY", 0))
+        self.resistance_z = float(xml_node.attrib.get("ResistanceZ", 0))
+        self.resistance_xx = float(xml_node.attrib.get("ResistanceXX", 0))
+        self.resistance_yy = float(xml_node.attrib.get("ResistanceYY", 0))
+        self.resistance_zz = float(xml_node.attrib.get("ResistanceZZ", 0))
+
+
+class GeometryMagnet(Geometry):
     pass
 
 
