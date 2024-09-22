@@ -972,7 +972,7 @@ class DmxChannel(BaseNode):
         self.geometry = xml_node.attrib.get("Geometry")
         self.logical_channels = [
             LogicalChannel(xml_node=i) for i in xml_node.findall("LogicalChannel")
-        ]
+        ] or [LogicalChannel(attribute="NoFunction")]
 
         initial_function_node = xml_node.attrib.get("InitialFunction")
         if initial_function_node:
@@ -1005,7 +1005,9 @@ class LogicalChannel(BaseNode):
         if channel_functions is not None:
             self.channel_functions = channel_functions
         else:
-            self.channel_functions = []
+            self.channel_functions = [
+                ChannelFunction(attribute="NoFeature", default=DmxValue("0/1"))
+            ]
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element"):
@@ -1016,7 +1018,7 @@ class LogicalChannel(BaseNode):
         self.dmx_change_time_limit = float(xml_node.attrib.get("DMXChangeTimeLimit", 0))
         self.channel_functions = [
             ChannelFunction(xml_node=i) for i in xml_node.findall("ChannelFunction")
-        ]
+        ] or [ChannelFunction(attribute="NoFeature", default=DmxValue("0/1"))]
 
 
 class ChannelFunction(BaseNode):
