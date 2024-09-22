@@ -5,7 +5,7 @@ import zipfile
 from .value import *  # type: ignore
 from .utils import *
 
-__version__ = "1.0.5.dev1"
+__version__ = "1.0.5.dev2"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
