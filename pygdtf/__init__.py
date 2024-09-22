@@ -208,6 +208,13 @@ class FixtureType:
             ]
         else:
             self.dmx_modes = []
+
+        # in GDTF < 1.2, there was no link from DMX Mode to Geometry root, do this manually
+        for mode in self.dmx_modes:
+            if mode.geometry is None:
+                if len(self.geometries) == 1:
+                    mode.geometry = self.geometries[0].name
+
         if revision_collect := self._root.find("Revisions"):
             self.revisions = [
                 Revision(xml_node=i) for i in revision_collect.findall("Revision")

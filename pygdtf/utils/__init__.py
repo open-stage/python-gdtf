@@ -166,6 +166,9 @@ def get_dmx_channels(
     dmx_mode = None
     dmx_mode = get_dmx_mode_by_name(gdtf_profile, mode)
     root_geometry = get_geometry_by_name(gdtf_profile, dmx_mode.geometry)
+    if root_geometry is None:
+        if len(gdtf_profile.geometries) == 1:
+            root_geometry = gdtf_profile.geometries[0]
 
     # get a flat list of all channels and their linked geometries
 
