@@ -676,7 +676,7 @@ class GeometryDisplay(Geometry):
 
         super().__init__(*args, **kwargs)
 
-    def _read_xml(self, xml_node: "element"):
+    def _read_xml(self, xml_node: "Element"):
         super()._read_xml(xml_node)
         self.texture = xml_node.attrib.get("texture", "")
 
@@ -702,7 +702,7 @@ class GeometryStructure(Geometry):
 
         super().__init__(*args, **kwargs)
 
-    def _read_xml(self, xml_node: "element"):
+    def _read_xml(self, xml_node: "Element"):
         super()._read_xml(xml_node)
         self.linked_geometry = xml_node.attrib.get("LinkedGeometry")
         self.structure_type = StructureType(xml_node.attrib.get("StructureType"))
@@ -755,7 +755,7 @@ class GeometrySupport(Geometry):
 
         super().__init__(*args, **kwargs)
 
-    def _read_xml(self, xml_node: "element"):
+    def _read_xml(self, xml_node: "Element"):
         super()._read_xml(xml_node)
         self.support_type = SupportType(xml_node.attrib.get("SupportType"))
         self.rope_cross_section = xml_node.attrib.get("RopeCrossSection")
@@ -1096,7 +1096,7 @@ class DmxChannel(BaseNode):
         self.geometry = xml_node.attrib.get("Geometry")
         self.logical_channels = [
             LogicalChannel(xml_node=i) for i in xml_node.findall("LogicalChannel")
-        ] or [LogicalChannel(attribute="NoFunction")]
+        ] or [LogicalChannel(attribute=NodeLink("Attributes", "NoFeature"))]
 
         initial_function_node = xml_node.attrib.get("InitialFunction")
         if initial_function_node:
@@ -1130,7 +1130,10 @@ class LogicalChannel(BaseNode):
             self.channel_functions = channel_functions
         else:
             self.channel_functions = [
-                ChannelFunction(attribute="NoFeature", default=DmxValue("0/1"))
+                ChannelFunction(
+                    attribute=NodeLink("Attributes", "NoFeature"),
+                    default=DmxValue("0/1"),
+                )
             ]
         super().__init__(*args, **kwargs)
 
@@ -1142,14 +1145,19 @@ class LogicalChannel(BaseNode):
         self.dmx_change_time_limit = float(xml_node.attrib.get("DMXChangeTimeLimit", 0))
         self.channel_functions = [
             ChannelFunction(xml_node=i) for i in xml_node.findall("ChannelFunction")
-        ] or [ChannelFunction(attribute="NoFeature", default=DmxValue("0/1"))]
+        ] or [
+            ChannelFunction(
+                attribute=NodeLink("Attributes", "NoFeature"),
+                default=DmxValue("0/1"),
+            )
+        ]
 
 
 class ChannelFunction(BaseNode):
     def __init__(
         self,
         name: str = None,
-        attribute: Union["NodeLink", str] = "NoFeature",
+        attribute: Union["NodeLink", str] = NodeLink("Attributes", "NoFeature"),
         original_attribute: str = None,
         dmx_from: "DmxValue" = DmxValue("0/1"),
         default: "DmxValue" = DmxValue("0/1"),

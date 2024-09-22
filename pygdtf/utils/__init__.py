@@ -105,6 +105,8 @@ def get_channels_for_geometry(
     channel_list: List[Any] = [],
 ) -> List[Any]:
     """Get all channels for the device, recursively, starting from root geometry"""
+    if geometry is None:
+        return []
     name = geometry.name
 
     if isinstance(geometry, pygdtf.GeometryReference):
