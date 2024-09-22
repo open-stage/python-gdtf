@@ -55,7 +55,7 @@ class FixtureType:
             self._read_xml()
 
     def _read_xml(self):
-        self.data_version = self._gdtf.get("DataVersion")
+        self.data_version = self._gdtf.get("DataVersion", 1.2)
         self.name = self._root.get("Name")
         self.short_name = self._root.get("ShortName")
         self.long_name = self._root.get("LongName")
