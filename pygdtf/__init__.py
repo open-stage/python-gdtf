@@ -166,10 +166,10 @@ class FixtureType:
                     model.file.crc = self._package.getinfo(
                         f"models/gltf/{model.file.name}.glb"
                     ).CRC
-                elif f"models/gltf/{model.file.name}.3ds" in self._package.namelist():
+                elif f"models/3ds/{model.file.name}.3ds" in self._package.namelist():
                     model.file.extension = "3ds"
                     model.file.crc = self._package.getinfo(
-                        f"models/gltf/{model.file.name}.3ds"
+                        f"models/3ds/{model.file.name}.3ds"
                     ).CRC
 
         self.geometries = []
