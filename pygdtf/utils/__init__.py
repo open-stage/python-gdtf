@@ -191,6 +191,8 @@ def get_dmx_channels(
                 channel_break = geometry.breaks[0].dmx_break
             else:
                 channel_break = 1
+        else:
+            channel_break = 1
 
         if len(dmx_channels) < channel_break:
             # create sublist for each group of dmx breaks,
