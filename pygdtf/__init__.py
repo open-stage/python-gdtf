@@ -230,6 +230,21 @@ class FixtureType:
         else:
             self.revisions = []
 
+        self.protocols = []
+        if protocols_collect := self._root.find("Protocols"):
+            for i in protocols_collect.findall("FTRDM"):
+                self.protocols.append(Rdm(xml_node=i))
+            for i in protocols_collect.findall("Art-Net"):
+                self.protocols.append(ArtNet(xml_node=i))
+            for i in protocols_collect.findall("sACN"):
+                self.protocols.append(Sacn(xml_node=i))
+            for i in protocols_collect.findall("PosiStageNet"):
+                self.protocols.append(PosiStageNet(xml_node=i))
+            for i in protocols_collect.findall("OpenSoundControl"):
+                self.protocols.append(OpenSoundControl(xml_node=i))
+            for i in protocols_collect.findall("CITP"):
+                self.protocols.append(Citp(xml_node=i))
+
 
 class BaseNode:
     def __init__(self, xml_node: "Element" = None):
@@ -1445,3 +1460,125 @@ class Properties(BaseNode):
         weight_tag = xml_node.find("Weight")
         if weight_tag is not None:
             self.weight = float(weight_tag.attrib.get("Value", 0))
+
+
+class Rdm(BaseNode):
+    def __init__(
+        self,
+        manufacturer_id: Union[str, None] = None,
+        device_mode_id: Union[str, None] = None,
+        software_versions: List["SoftwareVersionId"] = None,
+        *args,
+        **kwargs,
+    ):
+        self.manufacturer_id = manufacturer_id
+        self.device_mode_id = device_mode_id
+        if software_versions is not None:
+            self.software_versions = software_versions
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "Element"):
+        self.manufacturer_id = xml_node.attrib.get("ManufacturerID")
+        self.device_mode_id = xml_node.attrib.get("DeviceModelID")
+        self.software_versions = [
+            SoftwareVersionId(xml_node=i) for i in xml_node.findall("SoftwareVersionID")
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.manufacturer_id} ({self.device_mode_id}) {self.software_versions}"
+        )
+
+
+class SoftwareVersionId(BaseNode):
+    def __init__(
+        self,
+        value: Union[str, None] = None,
+        dmx_personalities: List["DmxPersonality"] = None,
+        *args,
+        **kwargs,
+    ):
+        self.value = value
+        if dmx_personalities is not None:
+            self.dmx_personalities = dmx_personalities
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "Element"):
+        self.value = xml_node.attrib.get("Value")
+        self.dmx_personalities = [
+            DmxPersonality(xml_node=i) for i in xml_node.findall("DMXPersonality")
+        ]
+
+    def __str__(self):
+        return f"{self.value} {self.dmx_personalities}"
+
+
+class DmxPersonality(BaseNode):
+    def __init__(
+        self,
+        dmx_mode: Union[str, None] = None,
+        value: Union[str, None] = None,
+        *args,
+        **kwargs,
+    ):
+        self.dmx_mode = dmx_mode
+        self.value = value
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "Element"):
+        self.dmx_mode = xml_node.attrib.get("DMXMode")
+        self.value = xml_node.attrib.get("Value")
+
+    def __str__(self):
+        return f"{self.dmx_mode} ({self.value})"
+
+
+class ArtNet(BaseNode):
+    def __init__(
+        self,
+        maps: List["Map"] = None,
+        *args,
+        **kwargs,
+    ):
+        if maps is not None:
+            self.maps = maps
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "Element"):
+        self.maps = [Map(xml_node=i) for i in xml_node.findall("Map")]
+
+
+class Map(BaseNode):
+    def __init__(
+        self,
+        key: int = 0,
+        value: int = 0,
+        *args,
+        **kwargs,
+    ):
+        self.key = key
+        self.value = value
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "Element"):
+        self.key = int(xml_node.attrib.get("Key", 0))
+        self.value = int(xml_node.attrib.get("Value", 0))
+
+    def __str__(self):
+        return f"{self.key} {self.value}"
+
+
+class Sacn(BaseNode):
+    pass
+
+
+class PosiStageNet(BaseNode):
+    pass
+
+
+class OpenSoundControl(BaseNode):
+    pass
+
+
+class Citp(BaseNode):
+    pass
