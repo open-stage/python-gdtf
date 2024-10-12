@@ -1,5 +1,6 @@
 import pygdtf
 from typing import List, Dict, Any
+import datetime
 
 
 def getValue(dmx_value, fine=False):
@@ -476,3 +477,15 @@ def calculate_complexity(gdtf_profile: "pygdtf.FixtureType" = None):
         data_out += f"{name}: {value}\n"
     # return total_complexity
     return {"total": total_complexity, "data": data_out}
+
+
+def get_sorted_revisions(
+    gdtf_profile: "pygdtf.FixtureType" = None, reverse: bool = False
+):
+    return sorted(
+        list(gdtf_profile.revisions),
+        key=lambda revision: datetime.datetime.strptime(
+            revision.date, "%Y-%m-%dT%H:%M:%S"
+        ),
+        reverse=reverse,
+    )

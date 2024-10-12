@@ -1426,6 +1426,9 @@ class Revision(BaseNode):
         self.date = xml_node.attrib.get("Date")
         self.user_id = int(xml_node.attrib.get("UserID", 0))
 
+    def __str__(self):
+        return f"{self.text} {self.date}"
+
 
 class Properties(BaseNode):
     def __init__(
