@@ -5,7 +5,7 @@ import zipfile
 from .value import *  # type: ignore
 from .utils import *
 
-__version__ = "1.0.5.dev2"
+__version__ = "1.0.5.dev3"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -40,7 +40,7 @@ def _find_root(pkg: "zipfile.ZipFile") -> "ElementTree.Element":
 
 
 class FixtureType:
-    def __init__(self, path=None, dsc_file: Union[str, None] = None):
+    def __init__(self, path=None, dsc_file: Optional[str] = None):
         self._package = None
         self._root = None
         if path is not None:
@@ -247,7 +247,7 @@ class FixtureType:
 
 
 class BaseNode:
-    def __init__(self, xml_node: "Element" = None):
+    def __init__(self, xml_node: Optional["Element"] = None):
         if xml_node is not None:
             self._read_xml(xml_node)
 
@@ -256,7 +256,7 @@ class BaseNode:
 
 
 class ActivationGroup(BaseNode):
-    def __init__(self, name: str = None, *args, **kwargs):
+    def __init__(self, name: Optional[str] = None, *args, **kwargs):
         self.name = name
         super().__init__(*args, **kwargs)
 
@@ -267,9 +267,9 @@ class ActivationGroup(BaseNode):
 class FeatureGroup(BaseNode):
     def __init__(
         self,
-        name: str = None,
-        pretty: str = None,
-        features: List["Feature"] = None,
+        name: Optional[str] = None,
+        pretty: Optional[str] = None,
+        features: Optional[List["Feature"]] = None,
         *args,
         **kwargs,
     ):
@@ -288,7 +288,7 @@ class FeatureGroup(BaseNode):
 
 
 class Feature(BaseNode):
-    def __init__(self, name: str = None, *args, **kwargs):
+    def __init__(self, name: Optional[str] = None, *args, **kwargs):
         self.name = name
         super().__init__(*args, **kwargs)
 
@@ -299,13 +299,13 @@ class Feature(BaseNode):
 class Attribute(BaseNode):
     def __init__(
         self,
-        name: str = None,
-        pretty: str = None,
-        activation_group: "NodeLink" = None,
-        feature: "NodeLink" = None,
-        main_attribute: "NodeLink" = None,
+        name: Optional[str] = None,
+        pretty: Optional[str] = None,
+        activation_group: Optional["NodeLink"] = None,
+        feature: Optional["NodeLink"] = None,
+        main_attribute: Optional["NodeLink"] = None,
         physical_unit: "PhysicalUnit" = PhysicalUnit(None),
-        color: "ColorCIE" = None,
+        color: Optional["ColorCIE"] = None,
         *args,
         **kwargs,
     ):
@@ -334,7 +334,11 @@ class Attribute(BaseNode):
 
 class Wheel(BaseNode):
     def __init__(
-        self, name: str = None, wheel_slots: List["WheelSlot"] = None, *args, **kwargs
+        self,
+        name: Optional[str] = None,
+        wheel_slots: Optional[List["WheelSlot"]] = None,
+        *args,
+        **kwargs,
     ):
         self.name = name
         if wheel_slots is not None:
@@ -351,11 +355,11 @@ class Wheel(BaseNode):
 class WheelSlot(BaseNode):
     def __init__(
         self,
-        name: str = None,
-        color: "ColorCIE" = None,
-        whl_filter: "NodeLink" = None,
-        media_file_name: "Resource" = None,
-        facets: List["PrismFacet"] = None,
+        name: Optional[str] = None,
+        color: Optional["ColorCIE"] = None,
+        whl_filter: Optional["NodeLink"] = None,
+        media_file_name: Optional["Resource"] = None,
+        facets: Optional[List["PrismFacet"]] = None,
         *args,
         **kwargs,
     ):
@@ -379,7 +383,11 @@ class WheelSlot(BaseNode):
 
 class PrismFacet(BaseNode):
     def __init__(
-        self, color: "ColorCIE" = None, rotation: "Rotation" = None, *args, **kwargs
+        self,
+        color: Optional["ColorCIE"] = None,
+        rotation: Optional["Rotation"] = None,
+        *args,
+        **kwargs,
     ):
         self.color = color
         self.rotation = rotation
@@ -393,10 +401,10 @@ class PrismFacet(BaseNode):
 class Emitter(BaseNode):
     def __init__(
         self,
-        name: str = None,
-        color: "ColorCIE" = None,
-        dominant_wave_length: float = None,
-        diode_part: str = None,
+        name: Optional[str] = None,
+        color: Optional["ColorCIE"] = None,
+        dominant_wave_length: Optional[float] = None,
+        diode_part: Optional[str] = None,
         *args,
         **kwargs,
     ):
@@ -409,10 +417,7 @@ class Emitter(BaseNode):
     def _read_xml(self, xml_node: "Element"):
         self.name = xml_node.attrib.get("Name")
         self.color = ColorCIE(str_repr=xml_node.attrib.get("Color"))
-        try:
-            self.dominant_wave_length = float(xml_node.attrib.get("DominantWaveLength"))
-        except TypeError:
-            self.dominant_wave_length = None
+        self.dominant_wave_length = float(xml_node.attrib.get("DominantWaveLength", 0))
         self.diode_part = xml_node.attrib.get("DiodePart")
         self.measurements = [
             Measurement(xml_node=i) for i in xml_node.findall("Measurement")
@@ -422,9 +427,9 @@ class Emitter(BaseNode):
 class Filter(BaseNode):
     def __init__(
         self,
-        name: str = None,
-        color: "ColorCIE" = None,
-        measurements: List["Measurement"] = None,
+        name: Optional[str] = None,
+        color: Optional["ColorCIE"] = None,
+        measurements: Optional[List["Measurement"]] = None,
         *args,
         **kwargs,
     ):
@@ -447,9 +452,9 @@ class Filter(BaseNode):
 class Measurement(BaseNode):
     def __init__(
         self,
-        physical: float = None,
-        luminous_intensity: float = None,
-        transmission: float = None,
+        physical: Optional[float] = None,
+        luminous_intensity: Optional[float] = None,
+        transmission: Optional[float] = None,
         interpolation_to: "InterpolationTo" = InterpolationTo(None),
         *args,
         **kwargs,
@@ -461,15 +466,9 @@ class Measurement(BaseNode):
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element"):
-        self.physical = float(xml_node.attrib.get("Physical"))
-        try:
-            self.luminous_intensity = float(xml_node.attrib.get("LuminousIntensity"))
-        except TypeError:
-            self.luminous_intensity = None
-        try:
-            self.transmission = float(xml_node.attrib.get("Transmission"))
-        except TypeError:
-            self.transmission = None
+        self.physical = float(xml_node.attrib.get("Physical", 0))
+        self.luminous_intensity = float(xml_node.attrib.get("LuminousIntensity", 0))
+        self.transmission = float(xml_node.attrib.get("Transmission", 0))
         self.interpolation_to = InterpolationTo(xml_node.attrib.get("InterpolationTo"))
         self.measurement_points = [
             MeasurementPoint(xml_node=i) for i in xml_node.findall("MeasurementPoint")
@@ -478,22 +477,26 @@ class Measurement(BaseNode):
 
 class MeasurementPoint(BaseNode):
     def __init__(
-        self, wave_length: float = None, energy: float = None, *args, **kwargs
+        self,
+        wave_length: Optional[float] = None,
+        energy: Optional[float] = None,
+        *args,
+        **kwargs,
     ):
         self.wave_length = wave_length
         self.energy = energy
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element"):
-        self.wave_length = float(xml_node.attrib.get("WaveLength"))
-        self.energy = float(xml_node.attrib.get("Energy"))
+        self.wave_length = float(xml_node.attrib.get("WaveLength", 0))
+        self.energy = float(xml_node.attrib.get("Energy", 0))
 
 
 class ColorSpace(BaseNode):
     def __init__(
         self,
         mode: "ColorSpaceMode" = ColorSpaceMode(None),
-        definition: "ColorSpaceDefinition" = None,
+        definition: Optional["ColorSpaceDefinition"] = None,
         *args,
         **kwargs,
     ):
@@ -533,7 +536,11 @@ class DmxProfile(BaseNode):
 
 class CriGroup(BaseNode):
     def __init__(
-        self, color_temperature: float = 6000, cris: List["Cri"] = None, *args, **kwargs
+        self,
+        color_temperature: float = 6000,
+        cris: Optional[List["Cri"]] = None,
+        *args,
+        **kwargs,
     ):
         self.color_temperature = color_temperature
         if cris is not None:
@@ -563,12 +570,12 @@ class Cri(BaseNode):
 class Model(BaseNode):
     def __init__(
         self,
-        name: str = None,
+        name: Optional[str] = None,
         length: float = 0,
         width: float = 0,
         height: float = 0,
         primitive_type: "PrimitiveType" = PrimitiveType(None),
-        file: Resource = None,
+        file: Optional["Resource"] = None,
         *args,
         **kwargs,
     ):
@@ -592,10 +599,10 @@ class Model(BaseNode):
 class Geometry(BaseNode):
     def __init__(
         self,
-        name: str = None,
-        model: str = None,
+        name: Optional[str] = None,
+        model: Optional[str] = None,
         position: "Matrix" = Matrix(0),
-        geometries: List = None,
+        geometries: Optional[List] = None,
         *args,
         **kwargs,
     ):
@@ -686,25 +693,25 @@ class GeometryMediaServerMaster(Geometry):
 
 
 class GeometryDisplay(Geometry):
-    def __init__(self, texture: str = "", *args, **kwargs):
+    def __init__(self, texture: Optional[str] = None, *args, **kwargs):
         self.texture = texture
 
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element"):
         super()._read_xml(xml_node)
-        self.texture = xml_node.attrib.get("texture", "")
+        self.texture = xml_node.attrib.get("texture")
 
 
 class GeometryStructure(Geometry):
     def __init__(
         self,
-        linked_geometry: str = "",
+        linked_geometry: Optional[str] = None,
         structure_type: StructureType = StructureType(None),
         cross_section_type: CrossSectionType = CrossSectionType(None),
         cross_section_height: float = 0,
         cross_section_wall_thickness: float = 0,
-        truss_cross_section: str = "",
+        truss_cross_section: Optional[str] = None,
         *args,
         **kwargs,
     ):
@@ -724,9 +731,9 @@ class GeometryStructure(Geometry):
         self.cross_section_type = CrossSectionType(
             xml_node.attrib.get("CrossSectionType")
         )
-        self.cross_section_height = float(xml_node.attrib.get("CrossSectionHeight"))
+        self.cross_section_height = float(xml_node.attrib.get("CrossSectionHeight", 0))
         self.cross_section_wall_thickness = float(
-            xml_node.attrib.get("CrossSectionWallThickness")
+            xml_node.attrib.get("CrossSectionWallThickness", 0)
         )
         self.truss_cross_section = xml_node.attrib.get("TrussCrossSection")
 
@@ -735,7 +742,7 @@ class GeometrySupport(Geometry):
     def __init__(
         self,
         support_type: SupportType = SupportType(None),
-        rope_cross_section: str = "",
+        rope_cross_section: Optional[str] = None,
         rope_offset: Vector3 = Vector3(0),
         capacity_x: float = 0,
         capacity_y: float = 0,
@@ -851,7 +858,7 @@ class GeometryLaser(Geometry):
         color_type: "ColorType" = ColorType(None),
         color: float = 0,
         output_strength: float = 0,
-        emitter: "NodeLink" = None,
+        emitter: Optional["NodeLink"] = None,
         beam_diameter: float = 0,
         beam_divergence_min: float = 0,
         beam_divergence_max: float = 0,
@@ -893,7 +900,7 @@ class GeometryLaser(Geometry):
 class Protocol(BaseNode):
     def __init__(
         self,
-        name: str = None,
+        name: Optional[str] = None,
         *args,
         **kwargs,
     ):
@@ -910,9 +917,9 @@ class Protocol(BaseNode):
 class GeometryWiringObject(Geometry):
     def __init__(
         self,
-        connector_type: str = None,
+        connector_type: Optional[str] = None,
         component_type: "ComponentType" = ComponentType(None),
-        signal_type: str = None,
+        signal_type: Optional[str] = None,
         pin_count: int = 0,
         electrical_payload: float = 0,
         voltage_range_max: float = 0,
@@ -926,7 +933,7 @@ class GeometryWiringObject(Geometry):
         fuse_current: float = 0,
         fuse_rating: "FuseRating" = FuseRating(None),
         orientation: "Orientation" = Orientation(None),
-        wire_group: str = None,
+        wire_group: Optional[str] = None,
         *args,
         **kwargs,
     ):
@@ -954,17 +961,17 @@ class GeometryWiringObject(Geometry):
         self.connector_type = xml_node.attrib.get("ConnectorType")
         self.component_type = ComponentType(xml_node.attrib.get("ComponentType"))
         self.signal_type = xml_node.attrib.get("SignalType")
-        self.pin_count = int(xml_node.attrib.get("PinCount"))
-        self.electrical_payload = float(xml_node.attrib.get("ElectricalPayLoad"))
-        self.voltage_range_max = float(xml_node.attrib.get("VoltageRangeMax"))
-        self.voltage_range_min = float(xml_node.attrib.get("VoltageRangeMin"))
-        self.frequency_range_max = float(xml_node.attrib.get("FrequencyRangeMax"))
-        self.frequency_range_min = float(xml_node.attrib.get("FrequencyRangeMin"))
-        self.max_payload = float(xml_node.attrib.get("MaxPayLoad"))
-        self.voltage = float(xml_node.attrib.get("Voltage"))
-        self.signal_layer = int(xml_node.attrib.get("SignalLayer"))
-        self.cos_phi = float(xml_node.attrib.get("CosPhi"))
-        self.fuse_current = float(xml_node.attrib.get("FuseCurrent"))
+        self.pin_count = int(xml_node.attrib.get("PinCount", 0))
+        self.electrical_payload = float(xml_node.attrib.get("ElectricalPayLoad", 0))
+        self.voltage_range_max = float(xml_node.attrib.get("VoltageRangeMax", 0))
+        self.voltage_range_min = float(xml_node.attrib.get("VoltageRangeMin", 0))
+        self.frequency_range_max = float(xml_node.attrib.get("FrequencyRangeMax", 0))
+        self.frequency_range_min = float(xml_node.attrib.get("FrequencyRangeMin", 0))
+        self.max_payload = float(xml_node.attrib.get("MaxPayLoad", 0))
+        self.voltage = float(xml_node.attrib.get("Voltage", 0))
+        self.signal_layer = int(xml_node.attrib.get("SignalLayer", 0))
+        self.cos_phi = float(xml_node.attrib.get("CosPhi", 0))
+        self.fuse_current = float(xml_node.attrib.get("FuseCurrent", 0))
         self.fuse_rating = FuseRating(xml_node.attrib.get("FuseRating"))
         self.orientation = Orientation(xml_node.attrib.get("Orientation"))
         self.wire_group = xml_node.attrib.get("WireGroup")
@@ -973,10 +980,10 @@ class GeometryWiringObject(Geometry):
 class GeometryReference(BaseNode):
     def __init__(
         self,
-        name: str = None,
+        name: Optional[str] = None,
         position: "Matrix" = Matrix(0),
-        geometry: str = None,
-        model: str = None,
+        geometry: Optional[str] = None,
+        model: Optional[str] = None,
         *args,
         **kwargs,
     ):
@@ -1020,11 +1027,11 @@ class Break(BaseNode):
 class DmxMode(BaseNode):
     def __init__(
         self,
-        name: str = None,
-        geometry: str = None,
-        dmx_channels: List["DmxChannel"] = None,
-        relations: List["Relation"] = None,
-        ft_macros: List["Macro"] = None,
+        name: Optional[str] = None,
+        geometry: Optional[str] = None,
+        dmx_channels: Optional[List["DmxChannel"]] = None,
+        relations: Optional[List["Relation"]] = None,
+        ft_macros: Optional[List["Macro"]] = None,
         *args,
         **kwargs,
     ):
@@ -1047,19 +1054,19 @@ class DmxMode(BaseNode):
     def _read_xml(self, xml_node: "Element"):
         self.name = xml_node.attrib.get("Name")
         self.geometry = xml_node.attrib.get("Geometry")
-        self.dmx_channels = [
-            DmxChannel(xml_node=i)
-            for i in xml_node.find("DMXChannels").findall("DMXChannel")
-        ]
 
-        relations_node = xml_node.find("Relations")
-        if relations_node:
+        if dmx_channels_collect := xml_node.find("DMXChannels"):
+            self.dmx_channels = [
+                DmxChannel(xml_node=i)
+                for i in dmx_channels_collect.findall("DMXChannel")
+            ]
+
+        if relations_node := xml_node.find("Relations"):
             self.relations = [
                 Relation(xml_node=i) for i in relations_node.findall("Relation")
             ]
 
-        ftmacros_node = xml_node.find("FTMacros")
-        if ftmacros_node:
+        if ftmacros_node := xml_node.find("FTMacros"):
             self.ft_macros = [
                 Macro(xml_node=i) for i in ftmacros_node.findall("FTMacro")
             ]
@@ -1069,12 +1076,12 @@ class DmxChannel(BaseNode):
     def __init__(
         self,
         dmx_break: Union[int, str] = 1,
-        offset: List[int] = None,
+        offset: Optional[List[int]] = None,
         default: "DmxValue" = DmxValue("0/1"),
         highlight: Optional["DmxValue"] = None,
-        initial_function: "NodeLink" = None,
+        initial_function: Optional["NodeLink"] = None,
         geometry: Optional[str] = None,
-        logical_channels: List["LogicalChannel"] = None,
+        logical_channels: Optional[List["LogicalChannel"]] = None,
         *args,
         **kwargs,
     ):
@@ -1096,7 +1103,11 @@ class DmxChannel(BaseNode):
         if _offset is None or _offset == "None" or _offset == "":
             self.offset = None
         else:
-            self.offset = [int(i) for i in xml_node.attrib.get("Offset").split(",")]
+            self.offset = [
+                int(i)
+                for i in xml_node.attrib.get("Offset", "").split(",")
+                if xml_node.attrib.get("Offset")
+            ]
 
         # obsoleted by initial function in GDTF 1.2
         self.default = DmxValue(xml_node.attrib.get("Default", "0/1"))
@@ -1127,12 +1138,12 @@ class DmxChannel(BaseNode):
 class LogicalChannel(BaseNode):
     def __init__(
         self,
-        attribute: "NodeLink" = None,
+        attribute: Optional["NodeLink"] = None,
         snap: "Snap" = Snap(None),
         master: "Master" = Master(None),
         mib_fade: float = 0,
         dmx_change_time_limit: float = 0,
-        channel_functions: List["ChannelFunction"] = None,
+        channel_functions: Optional[List["ChannelFunction"]] = None,
         *args,
         **kwargs,
     ):
@@ -1171,22 +1182,22 @@ class LogicalChannel(BaseNode):
 class ChannelFunction(BaseNode):
     def __init__(
         self,
-        name: str = None,
+        name: Optional[str] = None,
         attribute: Union["NodeLink", str] = NodeLink("Attributes", "NoFeature"),
-        original_attribute: str = None,
+        original_attribute: Optional[str] = None,
         dmx_from: "DmxValue" = DmxValue("0/1"),
         default: "DmxValue" = DmxValue("0/1"),
         physical_from: float = 0,
         physical_to: float = 1,
         real_fade: float = 0,
-        wheel: "NodeLink" = None,
-        emitter: "NodeLink" = None,
-        chn_filter: "NodeLink" = None,
+        wheel: Optional["NodeLink"] = None,
+        emitter: Optional["NodeLink"] = None,
+        chn_filter: Optional["NodeLink"] = None,
         dmx_invert: "DmxInvert" = DmxInvert(None),
-        mode_master: "NodeLink" = None,
+        mode_master: Optional["NodeLink"] = None,
         mode_from: "DmxValue" = DmxValue("0/1"),
         mode_to: "DmxValue" = DmxValue("0/1"),
-        channel_sets: List["ChannelSet"] = None,
+        channel_sets: Optional[List["ChannelSet"]] = None,
         *args,
         **kwargs,
     ):
@@ -1237,7 +1248,7 @@ class ChannelFunction(BaseNode):
 class ChannelSet(BaseNode):
     def __init__(
         self,
-        name: str = None,
+        name: Optional[str] = None,
         dmx_from: "DmxValue" = DmxValue("0/1"),
         physical_from: float = 0,
         physical_to: float = 1,
@@ -1263,9 +1274,9 @@ class ChannelSet(BaseNode):
 class Relation(BaseNode):
     def __init__(
         self,
-        name: str = None,
-        master: "NodeLink" = None,
-        follower: "NodeLink" = None,
+        name: Optional[str] = None,
+        master: Optional["NodeLink"] = None,
+        follower: Optional["NodeLink"] = None,
         rel_type: "RelationType" = RelationType(None),
         *args,
         **kwargs,
@@ -1286,9 +1297,9 @@ class Relation(BaseNode):
 class Macro(BaseNode):
     def __init__(
         self,
-        name: str = None,
-        dmx_steps: List["MacroDmxStep"] = None,
-        visual_steps: List["MacroVisualStep"] = None,
+        name: Optional[str] = None,
+        dmx_steps: Optional[List["MacroDmxStep"]] = None,
+        visual_steps: Optional[List["MacroVisualStep"]] = None,
         *args,
         **kwargs,
     ):
@@ -1303,27 +1314,24 @@ class Macro(BaseNode):
 
     def _read_xml(self, xml_node: "Element"):
         self.name = xml_node.attrib.get("Name")
-        try:
+
+        if macro_dmx_collect := xml_node.find("MacroDMX"):
             self.dmx_steps = [
                 MacroDmxStep(xml_node=i)
-                for i in xml_node.find("MacroDMX").findall("MacroDMXStep")
+                for i in macro_dmx_collect.findall("MacroDMXStep")
             ]
-        except AttributeError:
-            pass
-        try:
+        if macro_visual_collect := xml_node.find("MacroVisual"):
             self.visual_steps = [
                 MacroVisualStep(xml_node=i)
-                for i in xml_node.find("MacroVisual").findall("MacroVisualStep")
+                for i in macro_visual_collect.findall("MacroVisualStep")
             ]
-        except AttributeError:
-            pass
 
 
 class MacroDmxStep(BaseNode):
     def __init__(
         self,
         duration: float = 1,
-        dmx_values: List["MacroDmxValue"] = None,
+        dmx_values: Optional[List["MacroDmxValue"]] = None,
         *args,
         **kwargs,
     ):
@@ -1335,7 +1343,7 @@ class MacroDmxStep(BaseNode):
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element"):
-        self.duration = float(xml_node.attrib.get("Duration"))
+        self.duration = float(xml_node.attrib.get("Duration", 0.0))
         self.dmx_values = [
             MacroDmxValue(xml_node=i) for i in xml_node.findall("MacroDMXValue")
         ]
@@ -1344,8 +1352,8 @@ class MacroDmxStep(BaseNode):
 class MacroDmxValue(BaseNode):
     def __init__(
         self,
-        macro_value: "DmxValue" = None,
-        dmx_channel: "NodeLink" = None,
+        macro_value: Optional["DmxValue"] = None,
+        dmx_channel: Optional["NodeLink"] = None,
         *args,
         **kwargs,
     ):
@@ -1366,7 +1374,7 @@ class MacroVisualStep(BaseNode):
         duration: int = 1,
         fade: float = 0.0,
         delay: float = 0.0,
-        visual_values: List["MacroVisualValue"] = None,
+        visual_values: Optional[List["MacroVisualValue"]] = None,
         *args,
         **kwargs,
     ):
@@ -1391,8 +1399,8 @@ class MacroVisualStep(BaseNode):
 class MacroVisualValue(BaseNode):
     def __init__(
         self,
-        macro_value: "DmxValue" = None,
-        channel_function: "NodeLink" = None,
+        macro_value: Optional["DmxValue"] = None,
+        channel_function: Optional["NodeLink"] = None,
         *args,
         **kwargs,
     ):
@@ -1410,8 +1418,8 @@ class MacroVisualValue(BaseNode):
 class Revision(BaseNode):
     def __init__(
         self,
-        text: Union[str, None] = None,
-        date: Union[str, None] = None,
+        text: Optional[str] = None,
+        date: Optional[str] = None,
         user_id: int = 0,
         *args,
         **kwargs,
@@ -1468,9 +1476,9 @@ class Properties(BaseNode):
 class Rdm(BaseNode):
     def __init__(
         self,
-        manufacturer_id: Union[str, None] = None,
-        device_mode_id: Union[str, None] = None,
-        software_versions: List["SoftwareVersionId"] = None,
+        manufacturer_id: Optional[str] = None,
+        device_mode_id: Optional[str] = None,
+        software_versions: Optional[List["SoftwareVersionId"]] = None,
         *args,
         **kwargs,
     ):
@@ -1496,8 +1504,8 @@ class Rdm(BaseNode):
 class SoftwareVersionId(BaseNode):
     def __init__(
         self,
-        value: Union[str, None] = None,
-        dmx_personalities: List["DmxPersonality"] = None,
+        value: Optional[str] = None,
+        dmx_personalities: Optional[List["DmxPersonality"]] = None,
         *args,
         **kwargs,
     ):
@@ -1519,8 +1527,8 @@ class SoftwareVersionId(BaseNode):
 class DmxPersonality(BaseNode):
     def __init__(
         self,
-        dmx_mode: Union[str, None] = None,
-        value: Union[str, None] = None,
+        dmx_mode: Optional[str] = None,
+        value: Optional[str] = None,
         *args,
         **kwargs,
     ):
@@ -1539,7 +1547,7 @@ class DmxPersonality(BaseNode):
 class ArtNet(BaseNode):
     def __init__(
         self,
-        maps: List["Map"] = None,
+        maps: Optional[List["Map"]] = None,
         *args,
         **kwargs,
     ):

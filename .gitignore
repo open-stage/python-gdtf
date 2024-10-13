@@ -1,5 +1,6 @@
 build
 dist
+.venv
 __pycache__
 .python-version
 .mypy_cache

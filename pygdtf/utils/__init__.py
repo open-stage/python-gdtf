@@ -1,5 +1,5 @@
 import pygdtf
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import datetime
 
 
@@ -15,9 +15,13 @@ def getValue(dmx_value, fine=False):
 
 
 def get_dmx_mode_by_name(
-    gdtf_profile: "pygdtf.FixtureType" = None, mode_name: str = None
-) -> "pygdtf.DmxMode":
+    gdtf_profile: Optional["pygdtf.FixtureType"] = None, mode_name: Optional[str] = None
+) -> Optional["pygdtf.DmxMode"]:
     """Find mode by name"""
+
+    if gdtf_profile is None:
+        return None
+
     for mode in gdtf_profile.dmx_modes:
         if mode.name == mode_name:
             return mode
@@ -25,9 +29,13 @@ def get_dmx_mode_by_name(
 
 
 def get_geometry_by_name(
-    gdtf_profile: "pygdtf.FixtureType" = None, geometry_name: str = None
-) -> "pygdtf.Geometry":
+    gdtf_profile: Optional["pygdtf.FixtureType"] = None,
+    geometry_name: Optional[str] = None,
+) -> Optional["pygdtf.Geometry"]:
     """Recursively find a geometry of a given name"""
+
+    if gdtf_profile is None:
+        return None
 
     def iterate_geometries(collector):
         if (
@@ -50,7 +58,8 @@ def get_geometry_by_name(
 
 
 def get_geometry_by_type(
-    root_geometry: "pygdtf.Geometry" = None, geometry_class: "pygdtf.Geometry" = None
+    root_geometry: Optional["pygdtf.Geometry"] = None,
+    geometry_class: Optional["pygdtf.Geometry"] = None,
 ) -> List["pygdtf.Geometry"]:
     """Recursively find all geometries of a given type"""
 
@@ -67,9 +76,13 @@ def get_geometry_by_type(
 
 
 def get_model_by_name(
-    gdtf_profile: "pygdtf.FixtureType" = None, model_name: str = None
-) -> "pygdtf.Model":
+    gdtf_profile: Optional["pygdtf.FixtureType"] = None,
+    model_name: Optional[str] = None,
+) -> Optional["pygdtf.Model"]:
     """Find model by name"""
+    if gdtf_profile is None:
+        return None
+
     for model in gdtf_profile.models:
         if model.name == model_name:
             return model
@@ -78,7 +91,7 @@ def get_model_by_name(
 
 
 def get_channels_by_geometry(
-    geometry_name: str = None, channels: List["pygdtf.DmxChannel"] = []
+    geometry_name: Optional[str] = None, channels: List["pygdtf.DmxChannel"] = []
 ) -> List["pygdtf.DmxChannel"]:
     """Find channels for a given geometry"""
     matched: List["pygdtf.DmxChannel"] = []
@@ -91,7 +104,7 @@ def get_channels_by_geometry(
 
 def get_address_by_break(
     dmx_breaks: List["pygdtf.Break"] = [], value: int = 1
-) -> "pygdtf.DmxAddress":
+) -> Optional["pygdtf.DmxAddress"]:
     """Return DMX address for a given DMX break"""
     for item in dmx_breaks:
         if item.dmx_break == value:
@@ -100,8 +113,8 @@ def get_address_by_break(
 
 
 def get_channels_for_geometry(
-    gdtf_profile: "pygdtf.FixtureType" = None,
-    geometry: "pygdtf.Geometry" = None,
+    gdtf_profile: Optional["pygdtf.FixtureType"] = None,
+    geometry: Optional["pygdtf.Geometry"] = None,
     dmx_channels: List["pygdtf.DmxChannel"] = [],
     channel_list: List[Any] = [],
 ) -> List[Any]:
@@ -126,14 +139,16 @@ def get_channels_for_geometry(
 
 
 def get_virtual_channels(
-    gdtf_profile: "pygdtf.FixtureType" = None,
-    mode: str = None,
+    gdtf_profile: Optional["pygdtf.FixtureType"] = None,
+    mode: Optional[str] = None,
     include_channel_functions: bool = True,
 ) -> List["Dict"]:
     """Returns virtual channels"""
 
-    dmx_mode = None
     dmx_mode = get_dmx_mode_by_name(gdtf_profile, mode)
+    if dmx_mode is None:
+        return []
+
     root_geometry = get_geometry_by_name(gdtf_profile, dmx_mode.geometry)
     device_channels = get_channels_for_geometry(
         gdtf_profile, root_geometry, dmx_mode.dmx_channels, []
@@ -159,15 +174,21 @@ def get_virtual_channels(
 
 
 def get_dmx_channels(
-    gdtf_profile: "pygdtf.FixtureType" = None,
-    mode: str = None,
+    gdtf_profile: Optional["pygdtf.FixtureType"] = None,
+    mode: Optional[str] = None,
     include_channel_functions: bool = True,
 ) -> List["Dict"]:
     """Returns list of arrays, each array is one DMX Break,
     with DMX channels, defaults, geometries"""
 
-    dmx_mode = None
+    if gdtf_profile is None:
+        return []
+
     dmx_mode = get_dmx_mode_by_name(gdtf_profile, mode)
+
+    if dmx_mode is None:
+        return []
+
     root_geometry = get_geometry_by_name(gdtf_profile, dmx_mode.geometry)
     if root_geometry is None:
         if len(gdtf_profile.geometries) == 1:
@@ -289,11 +310,13 @@ def get_dmx_channels(
 
 
 def get_dmx_modes_info(
-    gdtf_profile: "pygdtf.FixtureType" = None,
+    gdtf_profile: Optional["pygdtf.FixtureType"] = None,
     include_channels=False,
     include_channel_functions=False,
 ):
     dmx_mode_list = []
+    if gdtf_profile is None:
+        return
 
     for idx, mode in enumerate(gdtf_profile.dmx_modes):
         mode_id = idx
@@ -326,30 +349,39 @@ def get_dmx_modes_info(
 
 
 def get_beam_geometries_for_mode(
-    gdtf_profile: "pygdtf.FixtureType" = None, mode_name: str = None
+    gdtf_profile: Optional["pygdtf.FixtureType"] = None, mode_name: Optional[str] = None
 ):
     # TODO: refactor into get geometry by type, but starting from a DMX mode
+
+    if gdtf_profile is None:
+        return []
+
     dmx_mode = get_dmx_mode_by_name(gdtf_profile, mode_name)
-    root_geometry = get_geometry_by_name(gdtf_profile, dmx_mode.geometry)
-    return get_beam_geometries(gdtf_profile, root_geometry, [])
+    if dmx_mode is not None:
+        root_geometry = get_geometry_by_name(gdtf_profile, dmx_mode.geometry)
+        return get_beam_geometries(gdtf_profile, root_geometry, [])
 
 
 def get_beam_geometries(
-    gdtf_profile: "pygdtf.FixtureType" = None,
-    geometry: "pygdtf.Geometry" = None,
+    gdtf_profile: Optional["pygdtf.FixtureType"] = None,
+    geometry: Optional["pygdtf.Geometry"] = None,
     geometry_list: List[Any] = [],
 ) -> List[Any]:
     """Get beam geometries"""
+
+    if gdtf_profile is None or geometry is None:
+        return []
 
     if isinstance(geometry, pygdtf.GeometryBeam):
         geometry_list.append(geometry)
 
     if isinstance(geometry, pygdtf.GeometryReference):
-        geometry_list = get_beam_geometries(
-            gdtf_profile,
-            get_geometry_by_name(gdtf_profile, geometry.geometry),
-            geometry_list,
-        )
+        if geometry.geometry is not None:
+            geometry_list = get_beam_geometries(
+                gdtf_profile,
+                get_geometry_by_name(gdtf_profile, geometry.geometry),
+                geometry_list,
+            )
 
     if hasattr(geometry, "geometries"):
         for sub_geometry in geometry.geometries:
@@ -359,8 +391,14 @@ def get_beam_geometries(
     return geometry_list
 
 
-def calculate_complexity(gdtf_profile: "pygdtf.FixtureType" = None):
+def calculate_complexity(gdtf_profile: Optional["pygdtf.FixtureType"] = None):
     """Returns complexity rating of the device based on presumed amount of work while creating it"""
+
+    if gdtf_profile is None:
+        return
+
+    if gdtf_profile._package is None:
+        return
 
     thumbnails_count = 0
     thumbnails_count += (
@@ -480,8 +518,10 @@ def calculate_complexity(gdtf_profile: "pygdtf.FixtureType" = None):
 
 
 def get_sorted_revisions(
-    gdtf_profile: "pygdtf.FixtureType" = None, reverse: bool = False
+    gdtf_profile: Optional["pygdtf.FixtureType"] = None, reverse: bool = False
 ):
+    if gdtf_profile is None:
+        return []
     return sorted(
         list(gdtf_profile.revisions),
         key=lambda revision: datetime.datetime.strptime(
