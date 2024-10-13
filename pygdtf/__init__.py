@@ -7,7 +7,7 @@ from .utils import *
 import datetime
 from enum import Enum as pyEnum
 
-__version__ = "1.0.5.dev3"
+__version__ = "1.0.5.dev4"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -1492,28 +1492,28 @@ class Properties(BaseNode):
 class Rdm(BaseNode):
     def __init__(
         self,
-        manufacturer_id: Optional[str] = None,
-        device_mode_id: Optional[str] = None,
+        manufacturer_id: int = 0,
+        device_model_id: int = 0,
         software_versions: Optional[List["SoftwareVersionId"]] = None,
         *args,
         **kwargs,
     ):
         self.manufacturer_id = manufacturer_id
-        self.device_mode_id = device_mode_id
+        self.device_model_id = device_model_id
         if software_versions is not None:
             self.software_versions = software_versions
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element"):
-        self.manufacturer_id = xml_node.attrib.get("ManufacturerID")
-        self.device_mode_id = xml_node.attrib.get("DeviceModelID")
+        self.manufacturer_id = int(xml_node.attrib.get("ManufacturerID", "0"), 16)
+        self.device_model_id = int(xml_node.attrib.get("DeviceModelID", "0"), 16)
         self.software_versions = [
             SoftwareVersionId(xml_node=i) for i in xml_node.findall("SoftwareVersionID")
         ]
 
     def __str__(self):
         return (
-            f"{self.manufacturer_id} ({self.device_mode_id}) {self.software_versions}"
+            f"{self.manufacturer_id} ({self.device_model_id}) {self.software_versions}"
         )
 
 
