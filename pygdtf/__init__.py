@@ -4,6 +4,8 @@ from xml.etree.ElementTree import Element
 import zipfile
 from .value import *  # type: ignore
 from .utils import *
+import datetime
+from enum import Enum as pyEnum
 
 __version__ = "1.0.5.dev3"
 
@@ -1433,6 +1435,20 @@ class Revision(BaseNode):
         self.text = xml_node.attrib.get("Text")
         self.date = xml_node.attrib.get("Date")
         self.user_id = int(xml_node.attrib.get("UserID", 0))
+
+    class date_formats(pyEnum):
+        STRING = "string"
+        DATETIME = "datetime"
+        TIMESTAMP = "timestamp"
+
+    def get_date(self, format_as: "date_formats" = date_formats.STRING):
+        if self.date is not None:
+            if format_as == self.date_formats.DATETIME:
+                return parse_date(self.date)
+            elif format_as == self.date_formats.STRING:
+                return self.date
+            elif format_as == self.date_formats.TIMESTAMP:
+                return int(parse_date(self.date).timestamp())
 
     def __str__(self):
         return f"{self.text} {self.date}"

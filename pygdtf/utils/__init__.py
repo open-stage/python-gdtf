@@ -524,8 +524,13 @@ def get_sorted_revisions(
         return []
     return sorted(
         list(gdtf_profile.revisions),
-        key=lambda revision: datetime.datetime.strptime(
-            revision.date, "%Y-%m-%dT%H:%M:%S"
-        ),
+        key=lambda revision: parse_date(revision.date),
         reverse=reverse,
     )
+
+
+def parse_date(date_string):
+    try:
+        return datetime.datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%S")
+    except ValueError:
+        return datetime.datetime(1970, 1, 1, 1, 0, 0)
