@@ -1457,10 +1457,10 @@ class Revision(BaseNode):
 class Properties(BaseNode):
     def __init__(
         self,
-        weight=0,
-        operating_temperature_low=0,
-        operating_temperature_high=40,
-        leg_height=0,
+        weight: float = 0,
+        operating_temperature_low: float = 0,
+        operating_temperature_high: float = 40,
+        leg_height: float = 0,
         *args,
         **kwargs,
     ):
