@@ -11,9 +11,12 @@ underscore_delimiters.
 ## Credits
 
 Originally [created](https://github.com/jackdpage/python-gdtf) by [Jack
-Page](https://github.com/jackdpage). Forked to
-[Open-Stage](https://github.com/open-stage), used for example by
-[BlenderDMX](https://github.com/open-stage/blender-dmx).
+Page](https://github.com/jackdpage). Friendly forked to
+[Open-Stage](https://github.com/open-stage) by
+[vanous](https://github.com/vanous). We continue publishing to pypi under the
+same [pygdtf](https://pypi.org/project/pygdtf/) name with Jack's permission.
+
+Used for example by [BlenderDMX](https://github.com/open-stage/blender-dmx).
 
 [Source code](https://github.com/open-stage/python-gdtf)
 
@@ -44,53 +47,35 @@ import pygdtf
 # parse a GDTF file
 gdtf_fixture = pygdtf.FixtureType("BlenderDMX@LED_PAR_64_RGBW@v0.3.gdtf")
 
+# one can also parse just a description.xml file during development or testing
+gdtf_fixture = pygdtf.FixtureType(dsc_file="description.xml")
+
 # get info about DMX Modes:
 pygdtf.utils.get_dmx_modes_info(gdtf_fixture)
 
-# [{'mode_id': 0,
-#  'mode_name': 'Default',
-#  'mode_dmx_channel_count': 5,
-#  'mode_virtual_channel_count': 0}]
+[{'mode_id': 0,
+  'mode_name': 'Default',
+  'mode_dmx_channel_count': 5,
+  'mode_virtual_channel_count': 0}]
 
 # get list of DMX channels with geometries, channels functions
 pygdtf.utils.get_dmx_channels(gdtf_fixture, "Default")
 
-# [[{'dmx': 1,
-#   'id': 'Dimmer',
-#   'default': 0,
-#   'geometry': 'Beam',
-#   'break': 1,
-#   'channel_functions': [<pygdtf.ChannelFunction at 0x7f122435c8b0>]},
-#  {'dmx': 2,
-#   'id': 'ColorAdd_R',
-#   'default': 255,
-#   'geometry': 'Beam',
-#   'break': 1,
-#   'channel_functions': [<pygdtf.ChannelFunction at 0x7f122435e860>]},
-#  {'dmx': 3,
-#   'id': 'ColorAdd_G',
-#   'default': 255,
-#   'geometry': 'Beam',
-#   'break': 1,
-#   'channel_functions': [<pygdtf.ChannelFunction at 0x7f122435f0d0>]},
-#  {'dmx': 4,
-#   'id': 'ColorAdd_B',
-#   'default': 255,
-#   'geometry': 'Beam',
-#   'break': 1,
-#   'channel_functions': [<pygdtf.ChannelFunction at 0x7f1224e56c20>]},
-#  {'dmx': 5,
-#   'id': 'ColorAdd_W',
-#   'default': 0,
-#   'geometry': 'Beam',
-#   'break': 1,
-#   'channel_functions': [<pygdtf.ChannelFunction at 0x7f122435fdf0>]}]]
+[[{'dmx': 1,
+  'id': 'Dimmer',
+  'default': 0,
+  'geometry': 'Beam',
+  'break': 1,
+  'channel_functions': [<pygdtf.ChannelFunction at 0x7f122435c8b0>]}]
+
+#you can get the full info with chanells and with channel functions at once:
+pygdtf.utils.get_dmx_modes_info(f, include_channels=True, include_channel_functions=True)
 
 ```
 
 See [BlenderDMX](https://github.com/open-stage/blender-dmx) and
 [tests](https://github.com/open-stage/python-gdtf/tree/master/tests) for
-reference implementation.
+reference implementation and usage examples.
 
 ## Usage principles
 
@@ -102,16 +87,13 @@ reference implementation.
   (tree).
 
 - do not use geometry names for anything related to function of the geometry
-  (yoke, pan, tilt, head), use attached GDTF attributes ("Pan", "Tilt")
-
-- only Beam, Camera and Wiring geometry types are currently used special types of
-  geometry. Other types (Axis...) are not really relevant as even Normal
-  geometry can have for example "Pan" GDTF attribute attached, to indicate
-  movement.
+  (yoke, pan, tilt, head), use attached GDTF attributes ("Pan", "Tilt") to know
+  what functions should the geometry perform
 
 ## Status
 
-- GDTF 1.1 with some portions of GDTF 1.2 being included
+- Many GDTF 1.2 features have been implemented
+- Some GDTF 1.1 features have been kept in
 
 ## Development
 
@@ -119,14 +101,16 @@ PRs appreciated.
 
 ### Typing
 
-* At this point, the `--no-strict-optional` is needed for mypy tests to pass:
+- We try to type the main library as well as the utils module, to test run:
 
 ```bash
-mypy pygdtf/*py  --pretty  --no-strict-optional
+mypy pygdtf/**py  --pretty
 ```
+
 ### Format
 
-- to format, use [black](https://github.com/psf/black))
+- To format, use [black](https://github.com/psf/black) or
+  [ruff](https://docs.astral.sh/ruff/)
 
 ### Testing
 
@@ -134,5 +118,5 @@ mypy pygdtf/*py  --pretty  --no-strict-optional
 - to test typing with mypy run pytest:
 
 ```bash
-pytest --mypy -m mypy pygdtf/*py
+pytest --mypy -m mypy pygdtf/**py
 ```
