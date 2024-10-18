@@ -1,11 +1,12 @@
-from typing import List, Union, Optional
+import datetime
+import zipfile
+from enum import Enum as pyEnum
+from typing import List, Optional, Union
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
-import zipfile
-from .value import *  # type: ignore
+
 from .utils import *
-import datetime
-from enum import Enum as pyEnum
+from .value import *  # type: ignore
 
 __version__ = "1.0.5.dev4"
 

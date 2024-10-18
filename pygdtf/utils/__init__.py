@@ -1,6 +1,7 @@
-import pygdtf
-from typing import List, Dict, Any, Optional
 import datetime
+from typing import Any, Dict, List, Optional
+
+import pygdtf
 
 
 def getValue(dmx_value, fine=False):
