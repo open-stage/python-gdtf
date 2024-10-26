@@ -315,6 +315,7 @@ def get_dmx_modes_info(
     gdtf_profile: Optional["pygdtf.FixtureType"] = None,
     include_channels=False,
     include_channel_functions=False,
+    flattened_channels=False,
 ):
     dmx_mode_list = []
     if gdtf_profile is None:
@@ -342,7 +343,9 @@ def get_dmx_modes_info(
         if include_channels:
             dmx_mode_info.update(
                 {
-                    "mode_dmx_channels": dmx_channels,
+                    "mode_dmx_channels": dmx_channels
+                    if flattened_channels is False
+                    else dmx_channels_flattened,
                     "mode_virtual_channels": virtual_channels,
                 }
             )
