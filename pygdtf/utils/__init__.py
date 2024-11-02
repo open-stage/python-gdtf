@@ -311,6 +311,50 @@ def get_dmx_channels(
     return dmx_channels
 
 
+def get_used_geometries(
+    gdtf_profile: Optional["pygdtf.FixtureType"] = None
+) -> List[str]:
+    """Return list of geometries, used in geometry trees"""
+
+    geometries_list = []
+
+    if gdtf_profile is None:
+        return []
+
+    for mode in gdtf_profile.dmx_modes:
+        geometry = get_geometry_by_name(gdtf_profile, mode.geometry)
+        geometries_list = get_geometries_for_geometry(
+            gdtf_profile, geometry, geometries_list
+        )
+    geometries_list = list(set(geometries_list))
+    return geometries_list
+
+
+def get_geometries_for_geometry(
+    gdtf_profile: Optional["pygdtf.FixtureType"] = None,
+    geometry: Optional["pygdtf.Geometry"] = None,
+    geometries_list: List[str] = [],
+) -> List[str]:
+    if geometry is None:
+        return []
+
+    geometries_list.append(geometry.__class__.__name__)
+
+    if isinstance(geometry, pygdtf.GeometryReference):
+        if geometry.geometry:
+            geometry = get_geometry_by_name(gdtf_profile, geometry.geometry)
+            geometries_list = get_geometries_for_geometry(
+                gdtf_profile, geometry, geometries_list
+            )
+
+    if hasattr(geometry, "geometries"):
+        for sub_geometry in geometry.geometries:
+            geometries_list = get_geometries_for_geometry(
+                gdtf_profile, sub_geometry, geometries_list
+            )
+    return geometries_list
+
+
 def get_dmx_modes_info(
     gdtf_profile: Optional["pygdtf.FixtureType"] = None,
     include_channels=False,
