@@ -8,7 +8,9 @@ def test_modes_channels_count(pygdtf_module):
     test_files = ["test1", "test2"]
 
     for test_file in test_files:
-        test_fixture_test_file = Path(Path(__file__).parents[0], f"{test_file}.xml")
+        test_fixture_test_file = Path(
+            Path(__file__).parents[0], f"{test_file}.xml"
+        ).as_posix()
         test_fixture_result_file = Path(Path(__file__).parents[0], f"{test_file}.json")
         with open(test_fixture_result_file) as f:
             test_result = json.load(f)
@@ -17,3 +19,34 @@ def test_modes_channels_count(pygdtf_module):
             fixture, include_channels=False, include_channel_functions=False
         )
         assert modes_info == test_result
+
+
+def test_get_geometries(pygdtf_module):
+    """Test get geometries with GeometryReferences"""
+
+    tests = [
+        (
+            "test1",
+            [
+                "GeometryBeam",
+                "GeometryWiringObject",
+                "GeometryAxis",
+                "Geometry",
+                "GeometryReference",
+            ],
+        ),
+        (
+            "test2",
+            ["GeometryWiringObject", "GeometryBeam", "Geometry", "GeometryReference"],
+        ),
+    ]
+
+    for test in tests:
+        test_file = test[0]
+        test_result = test[1]
+        test_fixture_test_file = Path(
+            Path(__file__).parents[0], f"{test_file}.xml"
+        ).as_posix()
+        fixture = pygdtf_module.FixtureType(dsc_file=test_fixture_test_file)
+        geometries = pygdtf_module.utils.get_used_geometries(fixture)
+        assert set(test_result) == set(geometries)

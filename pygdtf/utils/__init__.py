@@ -316,7 +316,7 @@ def get_used_geometries(
 ) -> List[str]:
     """Return list of geometries, used in geometry trees"""
 
-    geometries_list = []
+    geometries_list: List[str] = []
 
     if gdtf_profile is None:
         return []
@@ -342,16 +342,17 @@ def get_geometries_for_geometry(
 
     if isinstance(geometry, pygdtf.GeometryReference):
         if geometry.geometry:
-            geometry = get_geometry_by_name(gdtf_profile, geometry.geometry)
+            ref_geometry = get_geometry_by_name(gdtf_profile, geometry.geometry)
             geometries_list = get_geometries_for_geometry(
-                gdtf_profile, geometry, geometries_list
+                gdtf_profile, ref_geometry, geometries_list
             )
 
     if hasattr(geometry, "geometries"):
-        for sub_geometry in geometry.geometries:
-            geometries_list = get_geometries_for_geometry(
-                gdtf_profile, sub_geometry, geometries_list
-            )
+        if geometry.geometries:
+            for sub_geometry in geometry.geometries:
+                geometries_list = get_geometries_for_geometry(
+                    gdtf_profile, sub_geometry, geometries_list
+                )
     return geometries_list
 
 
