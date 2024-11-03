@@ -66,7 +66,7 @@ def get_geometry_by_type(
 
     def iterate_geometries(collector):
         for g in collector.geometries:
-            if type(g) == geometry_class:
+            if type(g) is geometry_class:
                 matched.append(g)
             if hasattr(g, "geometries"):
                 iterate_geometries(g)
@@ -312,7 +312,7 @@ def get_dmx_channels(
 
 
 def get_used_geometries(
-    gdtf_profile: Optional["pygdtf.FixtureType"] = None
+    gdtf_profile: Optional["pygdtf.FixtureType"] = None,
 ) -> List[str]:
     """Return list of geometries, used in geometry trees"""
 
