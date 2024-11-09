@@ -8,7 +8,7 @@ from xml.etree.ElementTree import Element
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.0.5.dev6"
+__version__ = "1.0.5.dev7"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -66,6 +66,7 @@ class FixtureType:
         self.description = self._root.get("Description")
         self.fixture_type_id = self._root.get("FixtureTypeID")
         self.thumbnail = self._root.get("Thumbnail", "").encode("utf-8").decode("cp437")
+        self.thumbnails = Thumbnails(xml_node=self._root, fixture_type=self)
         self.ref_ft = self._root.get("RefFT")
         # For each attribute, we first check for the existence of the collect node
         # If such a node doesn't exist, then none of the children will exist and
@@ -259,6 +260,43 @@ class BaseNode:
 
     def _read_xml(self, xml_node: "Element"):
         pass
+
+
+class Thumbnails(BaseNode):
+    def __init__(
+        self,
+        png: Optional["Resource"] = None,
+        svg: Optional["Resource"] = None,
+        fixture_type: Optional["FixtureType"] = None,
+        *args,
+        **kwargs,
+    ):
+        self.png = png
+        self.svg = svg
+        self.fixture_type = fixture_type
+        super().__init__(*args, **kwargs)
+
+        if self.fixture_type._package is not None:
+            if f"{self.png.name}.png" in self.fixture_type._package.namelist():
+                self.png.extension = "png"
+                self.png.crc = self.fixture_type._package.getinfo(
+                    f"{self.png.name}.png"
+                ).CRC
+            else:
+                self.png = None
+
+            if f"{self.svg.name}.svg" in self.fixture_type._package.namelist():
+                self.svg.extension = "svg"
+                self.svg.crc = self.fixture_type._package.getinfo(
+                    f"{self.svg.name}.svg"
+                ).CRC
+            else:
+                self.svg = None
+
+    def _read_xml(self, xml_node: "Element"):
+        name = xml_node.attrib.get("Thumbnail", "")
+        self.png = Resource(name=name)
+        self.svg = Resource(name=name)
 
 
 class ActivationGroup(BaseNode):
