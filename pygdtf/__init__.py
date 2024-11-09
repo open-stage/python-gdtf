@@ -276,8 +276,11 @@ class Thumbnails(BaseNode):
         self.fixture_type = fixture_type
         super().__init__(*args, **kwargs)
 
-        if self.fixture_type._package is not None:
-            if f"{self.png.name}.png" in self.fixture_type._package.namelist():
+        if self.fixture_type is not None and self.fixture_type._package is not None:
+            if (
+                self.png is not None
+                and f"{self.png.name}.png" in self.fixture_type._package.namelist()
+            ):
                 self.png.extension = "png"
                 self.png.crc = self.fixture_type._package.getinfo(
                     f"{self.png.name}.png"
@@ -285,7 +288,10 @@ class Thumbnails(BaseNode):
             else:
                 self.png = None
 
-            if f"{self.svg.name}.svg" in self.fixture_type._package.namelist():
+            if (
+                self.svg is not None
+                and f"{self.svg.name}.svg" in self.fixture_type._package.namelist()
+            ):
                 self.svg.extension = "svg"
                 self.svg.crc = self.fixture_type._package.getinfo(
                     f"{self.svg.name}.svg"
