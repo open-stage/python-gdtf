@@ -50,3 +50,9 @@ def test_get_geometries(pygdtf_module):
         fixture = pygdtf_module.FixtureType(dsc_file=test_fixture_test_file)
         geometries = pygdtf_module.utils.get_used_geometries(fixture)
         assert set(test_result) == set(geometries)
+
+
+def test_calculate_complexity_total(pygdtf_module, gdtf_fixture):
+    """Test calculation"""
+    total_complexity = pygdtf_module.utils.calculate_complexity(gdtf_fixture)["total"]
+    assert 89 == total_complexity
