@@ -8,7 +8,7 @@ from xml.etree.ElementTree import Element
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.0.5.dev7"
+__version__ = "1.0.5.dev8"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -73,72 +73,70 @@ class FixtureType:
         # the corresponding attribute for this class can be set to empty. Failing
         # to do this would result in AttributeError if we try to, for example, run
         # a findall on a non-existent collect
-        if activation_collect := self._root.find("AttributeDefinitions").find(
-            "ActivationGroups"
-        ):
-            self.activation_groups = [
-                ActivationGroup(xml_node=i)
-                for i in activation_collect.findall("ActivationGroup")
-            ]
-        else:
-            self.activation_groups = []
-        if feature_collect := self._root.find("AttributeDefinitions").find(
-            "FeatureGroups"
-        ):
-            self.feature_groups = [
-                FeatureGroup(xml_node=i)
-                for i in feature_collect.findall("FeatureGroup")
-            ]
-        else:
-            self.feature_groups = []
-        if attribute_collect := self._root.find("AttributeDefinitions").find(
-            "Attributes"
-        ):
-            self.attributes = [
-                Attribute(xml_node=i) for i in attribute_collect.findall("Attribute")
-            ]
-        else:
-            self.attributes = []
-        if wheel_collect := self._root.find("Wheels"):
+
+        attribute_definitions = self._root.find("AttributeDefinitions")
+
+        if attribute_definitions is not None:
+            activation_collect = attribute_definitions.find("ActivationGroups")
+            if activation_collect is not None:
+                self.activation_groups = [
+                    ActivationGroup(xml_node=i)
+                    for i in activation_collect.findall("ActivationGroup")
+                ]
+            else:
+                self.activation_groups = []
+
+            feature_collect = attribute_definitions.find("FeatureGroups")
+            if feature_collect is not None:
+                self.feature_groups = [
+                    FeatureGroup(xml_node=i)
+                    for i in feature_collect.findall("FeatureGroup")
+                ]
+            else:
+                self.feature_groups = []
+            attribute_collect = attribute_definitions.find("Attributes")
+            if attribute_collect is not None:
+                self.attributes = [
+                    Attribute(xml_node=i)
+                    for i in attribute_collect.findall("Attribute")
+                ]
+            else:
+                self.attributes = []
+
+        wheel_collect = self._root.find("Wheels")
+        if wheel_collect is not None:
             self.wheels = [Wheel(xml_node=i) for i in wheel_collect.findall("Wheel")]
         else:
             self.wheels = []
 
         physical_descriptions_node = self._root.find("PhysicalDescriptions")
 
-        if physical_descriptions_node:
-            if emitter_collect := self._root.find("PhysicalDescriptions").find(
-                "Emitters"
-            ):
+        if physical_descriptions_node is not None:
+            emitter_collect = physical_descriptions_node.find("Emitters")
+            if emitter_collect is not None:
                 self.emitters = [
                     Emitter(xml_node=i) for i in emitter_collect.findall("Emitter")
                 ]
             else:
                 self.emitters = []
 
-        if physical_descriptions_node:
-            if filter_collect := self._root.find("PhysicalDescriptions").find(
-                "Filters"
-            ):
+            filter_collect = physical_descriptions_node.find("Filters")
+            if filter_collect is not None:
                 self.filters = [
                     Filter(xml_node=i) for i in filter_collect.findall("Filter")
                 ]
             else:
                 self.filters = []
 
-        if physical_descriptions_node:
-            if color_space := self._root.find("PhysicalDescriptions").find(
-                "ColorSpace"
-            ):
+            color_space = physical_descriptions_node.find("ColorSpace")
+            if color_space is not None:
                 self.color_space = ColorSpace(xml_node=color_space)
             else:
                 # The default color space is sRGB if nothing else is defined
                 self.color_space = ColorSpace(mode=ColorSpaceMode("sRGB"))
 
-        if physical_descriptions_node:
-            if profiles_collect := self._root.find("PhysicalDescriptions").find(
-                "DMXProfiles"
-            ):
+            profiles_collect = physical_descriptions_node.find("DMXProfiles")
+            if profiles_collect is not None:
                 self.dmx_profiles = [
                     DmxProfile(xml_node=i)
                     for i in profiles_collect.findall("DMXProfile")
@@ -146,22 +144,23 @@ class FixtureType:
             else:
                 self.dmx_profiles = []
 
-        if physical_descriptions_node:
-            if cri_collect := self._root.find("PhysicalDescriptions").find("CRIs"):
+            cri_collect = physical_descriptions_node.find("CRIs")
+            if cri_collect is not None:
                 self.cri_groups = [
                     CriGroup(xml_node=i) for i in cri_collect.findall("CRIGroup")
                 ]
             else:
                 self.cri_groups = []
 
-        if physical_descriptions_node:
-            if properties := self._root.find("PhysicalDescriptions").find("Properties"):
+            properties = physical_descriptions_node.find("Properties")
+            if properties is not None:
                 self.properties = Properties(xml_node=properties)
             else:
                 self.properties: Properties = Properties()
 
         self.models = []
-        if model_collect := self._root.find("Models"):
+        model_collect = self._root.find("Models")
+        if model_collect is not None:
             self.models = [Model(xml_node=i) for i in model_collect.findall("Model")]
         for model in self.models:
             if self._package is not None:
@@ -177,7 +176,8 @@ class FixtureType:
                     ).CRC
 
         self.geometries = []
-        if geometry_collect := self._root.find("Geometries"):
+        geometry_collect = self._root.find("Geometries")
+        if geometry_collect is not None:
             for i in geometry_collect.findall("Geometry"):
                 self.geometries.append(Geometry(xml_node=i))
             for i in geometry_collect.findall("Axis"):
@@ -214,7 +214,9 @@ class FixtureType:
                 self.geometries.append(GeometryDisplay(xml_node=i))
             for i in geometry_collect.findall("Magnet"):
                 self.geometries.append(GeometryMagnet(xml_node=i))
-        if dmx_mode_collect := self._root.find("DMXModes"):
+
+        dmx_mode_collect = self._root.find("DMXModes")
+        if dmx_mode_collect is not None:
             self.dmx_modes = [
                 DmxMode(xml_node=i) for i in dmx_mode_collect.findall("DMXMode")
             ]
@@ -230,7 +232,8 @@ class FixtureType:
                 if self.geometries:
                     mode.geometry = self.geometries[0].name
 
-        if revision_collect := self._root.find("Revisions"):
+        revision_collect = self._root.find("Revisions")
+        if revision_collect is not None:
             self.revisions = [
                 Revision(xml_node=i) for i in revision_collect.findall("Revision")
             ]
@@ -238,7 +241,8 @@ class FixtureType:
             self.revisions = []
 
         self.protocols = []
-        if protocols_collect := self._root.find("Protocols"):
+        protocols_collect = self._root.find("Protocols")
+        if protocols_collect is not None:
             for i in protocols_collect.findall("FTRDM"):
                 self.protocols.append(Rdm(xml_node=i))
             for i in protocols_collect.findall("Art-Net"):
@@ -1105,18 +1109,21 @@ class DmxMode(BaseNode):
         self.name = xml_node.attrib.get("Name")
         self.geometry = xml_node.attrib.get("Geometry")
 
-        if dmx_channels_collect := xml_node.find("DMXChannels"):
+        dmx_channels_collect = xml_node.find("DMXChannels")
+        if dmx_channels_collect is not None:
             self.dmx_channels = [
                 DmxChannel(xml_node=i)
                 for i in dmx_channels_collect.findall("DMXChannel")
             ]
 
-        if relations_node := xml_node.find("Relations"):
+        relations_node = xml_node.find("Relations")
+        if relations_node is not None:
             self.relations = [
                 Relation(xml_node=i) for i in relations_node.findall("Relation")
             ]
 
-        if ftmacros_node := xml_node.find("FTMacros"):
+        ftmacros_node = xml_node.find("FTMacros")
+        if ftmacros_node is not None:
             self.ft_macros = [
                 Macro(xml_node=i) for i in ftmacros_node.findall("FTMacro")
             ]
@@ -1294,6 +1301,9 @@ class ChannelFunction(BaseNode):
             ChannelSet(xml_node=i) for i in xml_node.findall("ChannelSet")
         ]
 
+    def __str__(self):
+        return f"{self.name}, {self.attribute.str_link}"
+
 
 class ChannelSet(BaseNode):
     def __init__(
@@ -1365,12 +1375,14 @@ class Macro(BaseNode):
     def _read_xml(self, xml_node: "Element"):
         self.name = xml_node.attrib.get("Name")
 
-        if macro_dmx_collect := xml_node.find("MacroDMX"):
+        macro_dmx_collect = xml_node.find("MacroDMX")
+        if macro_dmx_collect is not None:
             self.dmx_steps = [
                 MacroDmxStep(xml_node=i)
                 for i in macro_dmx_collect.findall("MacroDMXStep")
             ]
-        if macro_visual_collect := xml_node.find("MacroVisual"):
+        macro_visual_collect = xml_node.find("MacroVisual")
+        if macro_visual_collect is not None:
             self.visual_steps = [
                 MacroVisualStep(xml_node=i)
                 for i in macro_visual_collect.findall("MacroVisualStep")
