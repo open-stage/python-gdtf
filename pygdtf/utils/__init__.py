@@ -167,9 +167,21 @@ def get_virtual_channels(
                 "geometry": geometry.name,
             }
             if include_channel_functions:
-                virtual_channel["channel_functions"] = (
-                    channel.logical_channels[0].channel_functions,
-                )
+                channel_functions = [
+                    {
+                        "name": channel_function.name,
+                        "attribute": channel_function.attribute.str_link,
+                        "real_fade": channel_function.real_fade,
+                        "channel_sets": [
+                            channel_set.name
+                            for channel_set in channel_function.channel_sets
+                        ],
+                    }
+                    for channel_function in channel.logical_channels[
+                        0
+                    ].channel_functions
+                ]
+                virtual_channel["channel_functions"] = channel_functions
             virtual_channels.append(virtual_channel)
     return virtual_channels
 
@@ -270,9 +282,19 @@ def get_dmx_channels(
             "break": channel_break,
         }
         if include_channel_functions:
-            break_channel["channel_functions"] = channel.logical_channels[
-                0
-            ].channel_functions
+            channel_functions = [
+                {
+                    "name": channel_function.name,
+                    "attribute": channel_function.attribute.str_link,
+                    "real_fade": channel_function.real_fade,
+                    "channel_sets": [
+                        channel_set.name
+                        for channel_set in channel_function.channel_sets
+                    ],
+                }
+                for channel_function in channel.logical_channels[0].channel_functions
+            ]
+            break_channel["channel_functions"] = channel_functions
         break_channels[offset_coarse - 1] = break_channel
 
         if offset_fine > 0:
@@ -288,9 +310,22 @@ def get_dmx_channels(
                 "break": channel_break,
             }
             if include_channel_functions:
-                break_channel["channel_functions"] = channel.logical_channels[
-                    0
-                ].channel_functions
+                channel_functions = [
+                    {
+                        "name": channel_function.name,
+                        "attribute": channel_function.attribute.str_link,
+                        "real_fade": channel_function.real_fade,
+                        "channel_sets": [
+                            channel_set.name
+                            for channel_set in channel_function.channel_sets
+                        ],
+                    }
+                    for channel_function in channel.logical_channels[
+                        0
+                    ].channel_functions
+                ]
+                break_channel["channel_functions"] = channel_functions
+
             break_channels[offset_fine - 1] = break_channel
 
         dmx_channels[channel_break - 1] = break_channels
@@ -530,12 +565,12 @@ def calculate_complexity(gdtf_profile: Optional["pygdtf.FixtureType"] = None):
         channel_functions_count += len(channel_functions)
         physical_from_to = 0
         for channel_function in channel_functions:
-            channel_sets_count += len(channel_function.channel_sets)
-            if channel_function.real_fade != 0:
+            channel_sets_count += len(channel_function.get("channel_sets", 0))
+            if channel_function.get("real_fade", 0) != 0:
                 real_fade_count += 1
-            if channel_function.physical_to != 0:
+            if channel_function.get("physical_to", 0) != 0:
                 physical_from_to += 1
-            if channel_function.physical_from != 0:
+            if channel_function.get("physical_from", 0) != 0:
                 physical_from_to += 1
 
     data = (
