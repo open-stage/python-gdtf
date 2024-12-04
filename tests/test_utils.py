@@ -54,5 +54,6 @@ def test_get_geometries(pygdtf_module):
 
 def test_calculate_complexity_total(pygdtf_module, gdtf_fixture):
     """Test calculation"""
-    total_complexity = pygdtf_module.utils.calculate_complexity(gdtf_fixture)["total"]
-    assert 89 == total_complexity
+    complexity = pygdtf_module.utils.calculate_complexity(gdtf_fixture)
+    print(complexity)
+    assert 119 == complexity["total"]

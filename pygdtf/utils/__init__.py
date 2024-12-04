@@ -172,6 +172,8 @@ def get_virtual_channels(
                         "name": channel_function.name,
                         "attribute": channel_function.attribute.str_link,
                         "real_fade": channel_function.real_fade,
+                        "physical_to": channel_function.physical_to,
+                        "physical_from": channel_function.physical_from,
                         "channel_sets": [
                             channel_set.name
                             for channel_set in channel_function.channel_sets
@@ -287,6 +289,8 @@ def get_dmx_channels(
                     "name": channel_function.name,
                     "attribute": channel_function.attribute.str_link,
                     "real_fade": channel_function.real_fade,
+                    "physical_to": channel_function.physical_to,
+                    "physical_from": channel_function.physical_from,
                     "channel_sets": [
                         channel_set.name
                         for channel_set in channel_function.channel_sets
@@ -315,6 +319,8 @@ def get_dmx_channels(
                         "name": channel_function.name,
                         "attribute": channel_function.attribute.str_link,
                         "real_fade": channel_function.real_fade,
+                        "physical_to": channel_function.physical_to,
+                        "physical_from": channel_function.physical_from,
                         "channel_sets": [
                             channel_set.name
                             for channel_set in channel_function.channel_sets
