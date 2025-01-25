@@ -227,7 +227,9 @@ def get_dmx_channels(
             and channel.dmx_break == "Overwrite"
         ):
             if len(geometry.breaks):
-                channel_break = geometry.breaks[0].dmx_break
+                channel_break = geometry.breaks[
+                    -1
+                ].dmx_break  # overwrite break is always the last one
             else:
                 channel_break = 1
 
