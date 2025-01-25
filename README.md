@@ -58,19 +58,56 @@ pygdtf.utils.get_dmx_modes_info(gdtf_fixture)
   'mode_dmx_channel_count': 5,
   'mode_virtual_channel_count': 0}]
 
-# get list of DMX channels with geometries, channels functions
+# get list of DMX channels with geometries, channels functions for a DMX Mode named "Default"
 pygdtf.utils.get_dmx_channels(gdtf_fixture, "Default")
 
-[[{'dmx': 1,
-  'id': 'Dimmer',
-  'default': 0,
-  'geometry': 'Beam',
-  'break': 1,
-  'channel_functions': [<pygdtf.ChannelFunction at 0x7f122435c8b0>]}]
+[
+    [
+        {'dmx': 1, 'id': 'Dimmer', 'offset': [
+                1
+            ], 'default': 0, 'highlight': 255, 'geometry': 'Beam', 'break': 1, 'channel_functions': [
+                {'name': 'Dimmer', 'attribute': 'Dimmer', 'real_fade': 0.0, 'physical_to': 1.0, 'physical_from': 0.0, 'channel_sets': ['Closed', '', 'Open'
+                    ]
+                }
+            ]
+        },
+        {'dmx': 2, 'id': 'ColorAdd_R', 'offset': [
+                2
+            ], 'default': 0, 'highlight': 255, 'geometry': 'Beam', 'break': 1, 'channel_functions': [
+                {'name': 'ColorAdd_R', 'attribute': 'ColorAdd_R', 'real_fade': 0.0, 'physical_to': 1.0, 'physical_from': 0.0, 'channel_sets': ['Min', '', 'Max'
+                    ]
+                }
+            ]
+        },
+        {'dmx': 3, 'id': 'ColorAdd_G', 'offset': [
+                3
+            ], 'default': 0, 'highlight': 255, 'geometry': 'Beam', 'break': 1, 'channel_functions': [
+                {'name': 'ColorAdd_G', 'attribute': 'ColorAdd_G', 'real_fade': 0.0, 'physical_to': 1.0, 'physical_from': 0.0, 'channel_sets': ['Min', '', 'Max'
+                    ]
+                }
+            ]
+        },
+        {'dmx': 4, 'id': 'ColorAdd_B', 'offset': [
+                4
+            ], 'default': 0, 'highlight': 255, 'geometry': 'Beam', 'break': 1, 'channel_functions': [
+                {'name': 'ColorAdd_B', 'attribute': 'ColorAdd_B', 'real_fade': 0.0, 'physical_to': 1.0, 'physical_from': 0.0, 'channel_sets': ['Min', '', 'Max'
+                    ]
+                }
+            ]
+        },
+        {'dmx': 5, 'id': 'ColorAdd_W', 'offset': [
+                5
+            ], 'default': 0, 'highlight': None, 'geometry': 'Beam', 'break': 1, 'channel_functions': [
+                {'name': 'ColorAdd_W', 'attribute': 'ColorAdd_W', 'real_fade': 0.0, 'physical_to': 1.0, 'physical_from': 0.0, 'channel_sets': ['Min', '', 'Max'
+                    ]
+                }
+            ]
+        }
+    ]
+]
 
-#you can get the full info with chanells and with channel functions at once:
-pygdtf.utils.get_dmx_modes_info(f, include_channels=True, include_channel_functions=True)
-
+#you can get the full info with channels and with channel functions at once:
+pygdtf.utils.get_dmx_modes_info(gdtf_fixture, include_channels=True, include_channel_functions=True)
 ```
 
 See [BlenderDMX](https://github.com/open-stage/blender-dmx) and
@@ -97,7 +134,12 @@ reference implementation and usage examples.
 
 ## Development
 
-PRs appreciated.
+PRs appreciated. You can use [uv](https://docs.astral.sh/uv/) to get the
+project setup by running:
+
+```bash
+uv sync
+```
 
 ### Typing
 

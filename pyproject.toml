@@ -29,6 +29,13 @@ license-files = []
 [tool.setuptools.dynamic]
 version = {attr = "pygdtf.__version__"}
 
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "pytest-mypy>=0.10.3",
+    "ruff>=0.9.3",
+]
+
 [project.urls]
 Repository = "https://github.com/open-stage/python-gdtf.git"
 Changelog = "https://github.com/open-stage/python-gdtf/blob/master/CHANGELOG.md"

@@ -1,5 +1,38 @@
 ### Changelog
 
+#### Version 1.0.5
+
+* Library:
+    * Add Protocols
+    * Add Geometry types: Support, Structure, Display, Magnet
+    * Add CRC to file properties
+    * Add Thumbnails object (allows to get png and svg thumbnails)
+    * Allow to parse description xml directly from an XML file
+    * Add default value to DataVersion
+    * Link geometry to DMX Mode geometry if link is missing
+    * Add Default DMX Mode if missing
+    * Add default LogicalChannel and ChannelFunction if missing
+    * Convert some RDM codes to int, fix name 
+    * Improve Revision date parsing, return as multiple types
+    * Change conditionals due to changes in xml.etree (removing the walrus operator)
+    * Fix 3DS CRC and extension detection
+    * Fix NodeLinks in default LogicalChannels and ChannelFunctions
+* Utilities:
+    * Allow to (not) include channel functions with channels
+    * Rework get dmx channels function to include ChannelFunctions data as dicts
+    * Add Get Used Geometries utility function
+    * Allow to (not)flatten dmx channels
+    * Improve getting DMX Break of GeometryReferences
+    * Add get_sorted_revisions utility function
+* Packaging, testing, CI/CD:
+    * Add python 3.13 and 3.14, including beta to actions
+    * Add test for complexity calculation
+    * Add ruff test for formatted code
+    * Add tests to ensure correct dmx modes/channels processing
+    * Improve code and typing to pass mypy --no-strict-optional
+    * Convert to pyproject.toml
+    * Use uv for python, dependencies, build, publishing
+
 #### Version 1.0.4
 
 * Handle faulty XML files with extra null byte
