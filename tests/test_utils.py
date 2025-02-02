@@ -16,8 +16,11 @@ def test_modes_channels_count(pygdtf_module):
             test_result = json.load(f)
         fixture = pygdtf_module.FixtureType(dsc_file=test_fixture_test_file)
         modes_info = pygdtf_module.utils.get_dmx_modes_info(
-            fixture, include_channels=False, include_channel_functions=False
+            fixture, include_channels=True, include_channel_functions=False
         )
+        # This is here to capture test data next time if needed
+        # with open(test_file, "w") as f:
+        #    json.dump(modes_info, f)
         assert modes_info == test_result
 
 

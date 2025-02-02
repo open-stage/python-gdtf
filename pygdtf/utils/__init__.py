@@ -284,6 +284,7 @@ def get_dmx_channels(
             else None,
             "geometry": geometry.name,
             "break": channel_break,
+            "parent_name": geometry.parent_name,
         }
         if include_channel_functions:
             channel_functions = [
@@ -314,6 +315,7 @@ def get_dmx_channels(
                 else None,
                 "geometry": geometry.name,
                 "break": channel_break,
+                "parent_name": geometry.parent_name,
             }
             if include_channel_functions:
                 channel_functions = [
