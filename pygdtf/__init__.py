@@ -8,7 +8,7 @@ from xml.etree.ElementTree import Element
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.0.6"
+__version__ = "1.0.6.dev0"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
