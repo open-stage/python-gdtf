@@ -7,17 +7,6 @@ import pygdtf
 def getValue(dmx_value, fine=False):
     if dmx_value.byte_count == 1:
         return dmx_value.value
-    f = dmx_value.value / 255.0
-    msb = int(f)
-    if not fine:
-        return msb
-    lsb = int((f - msb) * 255)
-    return lsb
-
-
-def getValue(dmx_value, fine=False):
-    if dmx_value.byte_count == 1:
-        return dmx_value.value
 
     msb = (dmx_value.value >> 8) & 0xFF
     lsb = dmx_value.value & 0xFF
