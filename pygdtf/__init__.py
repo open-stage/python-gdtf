@@ -8,7 +8,7 @@ from xml.etree.ElementTree import Element
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.0.6.dev0"
+__version__ = "1.0.6.dev1"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -1199,6 +1199,7 @@ class DmxChannel(BaseNode):
         highlight: Optional["DmxValue"] = None,
         initial_function: Optional["NodeLink"] = None,
         geometry: Optional[str] = None,
+        name: Optional[str] = None,
         logical_channels: Optional[List["LogicalChannel"]] = None,
         *args,
         **kwargs,
@@ -1209,6 +1210,7 @@ class DmxChannel(BaseNode):
         self.highlight = highlight
         self.initial_function = initial_function
         self.geometry = geometry
+        self.name = name
         self.logical_channels = logical_channels
         super().__init__(*args, **kwargs)
 
@@ -1242,14 +1244,20 @@ class DmxChannel(BaseNode):
             LogicalChannel(xml_node=i) for i in xml_node.findall("LogicalChannel")
         ] or [LogicalChannel(attribute=NodeLink("Attributes", "NoFeature"))]
 
+        _logical_channel = self.logical_channels[0]
+        self.name = f"{self.geometry}_{_logical_channel.attribute}"
         initial_function_node = xml_node.attrib.get("InitialFunction")
         if initial_function_node:
             self.initial_function = NodeLink(
                 xml_node, xml_node.attrib.get("InitialFunction")
             )
             for logical_channel in self.logical_channels:
+                logical_channel_name = f"{self.name}.{logical_channel.attribute}"
                 for channel_function in logical_channel.channel_functions:
-                    if channel_function.name == self.initial_function:
+                    channel_function_name = (
+                        f"{logical_channel_name}.{channel_function.name}"
+                    )
+                    if channel_function_name == str(self.initial_function):
                         self.default = channel_function.default
 
 

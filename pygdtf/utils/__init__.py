@@ -158,6 +158,7 @@ def get_virtual_channels(
     virtual_channels: List[Dict[Any, Any]] = []
 
     for channel, geometry in device_channels:
+        # initial_channel_function = channel.initial_function
         if channel.offset is None:
             virtual_channel = {
                 "id": str(channel.logical_channels[0].channel_functions[0].attribute),
@@ -171,6 +172,7 @@ def get_virtual_channels(
                     {
                         "name": channel_function.name,
                         "attribute": channel_function.attribute.str_link,
+                        "default": getValue(channel_function.default),
                         "real_fade": channel_function.real_fade,
                         "physical_to": channel_function.physical_to,
                         "physical_from": channel_function.physical_from,
@@ -291,6 +293,7 @@ def get_dmx_channels(
                 {
                     "name": channel_function.name,
                     "attribute": channel_function.attribute.str_link,
+                    "default": getValue(channel_function.default),
                     "real_fade": channel_function.real_fade,
                     "physical_to": channel_function.physical_to,
                     "physical_from": channel_function.physical_from,
@@ -322,6 +325,7 @@ def get_dmx_channels(
                     {
                         "name": channel_function.name,
                         "attribute": channel_function.attribute.str_link,
+                        "default": getValue(channel_function.default),
                         "real_fade": channel_function.real_fade,
                         "physical_to": channel_function.physical_to,
                         "physical_from": channel_function.physical_from,
