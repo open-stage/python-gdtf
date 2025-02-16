@@ -19,7 +19,7 @@ def test_modes_channels_count(pygdtf_module):
             fixture, include_channels=True, include_channel_functions=False
         )
         # This is here to capture test data next time if needed
-        # with open(test_file, "w") as f:
+        # with open(f"tests/{test_file}.json", "w") as f:
         #    json.dump(modes_info, f)
         assert modes_info == test_result
 
