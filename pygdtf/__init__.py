@@ -254,7 +254,8 @@ class FixtureType:
         dmx_mode_collect = self._root.find("DMXModes")
         if dmx_mode_collect is not None:
             self.dmx_modes = [
-                DmxMode(xml_node=i) for i in dmx_mode_collect.findall("DMXMode")
+                DmxMode(xml_node=i, fixture_type=self)
+                for i in dmx_mode_collect.findall("DMXMode")
             ]
         else:
             self.dmx_modes = []
@@ -1143,19 +1144,33 @@ class DmxMode(BaseNode):
     def __init__(
         self,
         name: Optional[str] = None,
+        description: Optional[str] = None,
         geometry: Optional[str] = None,
-        dmx_channels: Optional[List["DmxChannel"]] = None,
+        _dmx_channels: Optional[List["DmxChannel"]] = None,
+        dmx_channels: Optional[List] = None,
+        virtual_channels: Optional[List] = None,
         relations: Optional[List["Relation"]] = None,
         ft_macros: Optional[List["Macro"]] = None,
+        fixture_type: Optional["FixtureType"] = None,
+        dmx_breaks: Optional[int] = 0,
         *args,
         **kwargs,
     ):
         self.name = name
+        self.description = description
         self.geometry = geometry
+        if _dmx_channels is not None:
+            self._dmx_channels = _dmx_channels
+        else:
+            self._dmx_channels = []
         if dmx_channels is not None:
             self.dmx_channels = dmx_channels
         else:
             self.dmx_channels = []
+        if virtual_channels is not None:
+            self.virtual_channels = virtual_channels
+        else:
+            self.virtual_channels = []
         if relations is not None:
             self.relations = relations
         else:
@@ -1164,18 +1179,37 @@ class DmxMode(BaseNode):
             self.ft_macros = ft_macros
         else:
             self.ft_macros = []
+        self.fixture_type = fixture_type
+        self.dmx_breaks = dmx_breaks
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.name = xml_node.attrib.get("Name")
+        self.description = xml_node.attrib.get("Description", "")
         self.geometry = xml_node.attrib.get("Geometry")
 
         dmx_channels_collect = xml_node.find("DMXChannels")
         if dmx_channels_collect is not None:
-            self.dmx_channels = [
+            self._dmx_channels = [
                 DmxChannel(xml_node=i)
                 for i in dmx_channels_collect.findall("DMXChannel")
             ]
+
+        self.dmx_channels = get_dmx_channels(
+            gdtf_profile=self.fixture_type,
+            include_channel_functions=True,
+            channels_as_dicts=False,
+            dmx_mode=self,
+        )
+
+        self.dmx_breaks = len(self.dmx_channels)
+
+        self.virtual_channels = get_virtual_channels(
+            gdtf_profile=self.fixture_type,
+            include_channel_functions=True,
+            channels_as_dicts=False,
+            dmx_mode=self,
+        )
 
         relations_node = xml_node.find("Relations")
         if relations_node is not None:
@@ -1550,7 +1584,7 @@ class RevisionsList(list):
     def revisions_sorted(self, reverse: bool = False):
         return sorted(
             self,
-            key=lambda revision: utils.parse_date(revision.date),
+            key=lambda revision: parse_date(revision.date),
             reverse=reverse,
         )
 

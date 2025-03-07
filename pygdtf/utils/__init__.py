@@ -132,16 +132,20 @@ def get_virtual_channels(
     gdtf_profile: Optional["pygdtf.FixtureType"] = None,
     mode: Optional[str] = None,
     include_channel_functions: bool = True,
+    channels_as_dicts: bool = True,
+    dmx_mode: Optional["pygdtf.DmxMode"] = None,
 ) -> List["Dict"]:
     """Returns virtual channels"""
 
-    dmx_mode = get_dmx_mode_by_name(gdtf_profile, mode)
+    if dmx_mode is None:
+        dmx_mode = get_dmx_mode_by_name(gdtf_profile, mode)
+
     if dmx_mode is None:
         return []
 
     root_geometry = get_geometry_by_name(gdtf_profile, dmx_mode.geometry)
     device_channels = get_channels_for_geometry(
-        gdtf_profile, root_geometry, dmx_mode.dmx_channels, []
+        gdtf_profile, root_geometry, dmx_mode._dmx_channels, []
     )
 
     virtual_channels: List[Dict[Any, Any]] = []
@@ -151,9 +155,9 @@ def get_virtual_channels(
         if channel.offset is None:
             virtual_channel = {
                 "id": str(channel.logical_channels[0].channel_functions[0].attribute),
-                "default": getValue(
-                    channel.logical_channels[0].channel_functions[0].default
-                ),
+                "default": channel.logical_channels[0]
+                .channel_functions[0]
+                .default.get_value(),
                 "geometry": geometry.name,
             }
             if include_channel_functions:
@@ -161,7 +165,7 @@ def get_virtual_channels(
                     {
                         "name": channel_function.name,
                         "attribute": channel_function.attribute.str_link,
-                        "default": getValue(channel_function.default),
+                        "default": channel_function.default.get_value(),
                         "real_fade": channel_function.real_fade,
                         "physical_to": channel_function.physical_to,
                         "physical_from": channel_function.physical_from,
@@ -175,6 +179,9 @@ def get_virtual_channels(
                     ].channel_functions
                 ]
                 virtual_channel["channel_functions"] = channel_functions
+
+            if not channels_as_dicts:
+                virtual_channel = channel
             virtual_channels.append(virtual_channel)
     return virtual_channels
 
@@ -183,6 +190,8 @@ def get_dmx_channels(
     gdtf_profile: Optional["pygdtf.FixtureType"] = None,
     mode: Optional[str] = None,
     include_channel_functions: bool = True,
+    channels_as_dicts: bool = True,
+    dmx_mode: Optional["pygdtf.DmxMode"] = None,
 ) -> List["Dict"]:
     """Returns list of arrays, each array is one DMX Break,
     with DMX channels, defaults, geometries"""
@@ -190,7 +199,8 @@ def get_dmx_channels(
     if gdtf_profile is None:
         return []
 
-    dmx_mode = get_dmx_mode_by_name(gdtf_profile, mode)
+    if dmx_mode is None:
+        dmx_mode = get_dmx_mode_by_name(gdtf_profile, mode)
 
     if dmx_mode is None:
         return []
@@ -203,7 +213,7 @@ def get_dmx_channels(
     # get a flat list of all channels and their linked geometries
 
     device_channels = get_channels_for_geometry(
-        gdtf_profile, root_geometry, dmx_mode.dmx_channels, []
+        gdtf_profile, root_geometry, dmx_mode._dmx_channels, []
     )
 
     dmx_channels: List[Any] = []
@@ -225,6 +235,8 @@ def get_dmx_channels(
                 channel_break = 1
 
         if channel_break == "Overwrite":
+            # This only happens in an incorrect GDTF file
+            # as Overwrite can only be on Referenced geometry
             channel_break = 1
 
         if len(dmx_channels) < channel_break:
@@ -254,23 +266,16 @@ def get_dmx_channels(
 
         if len(break_channels) < max_offset:
             # print(len(break_channels), break_channels)
-            break_channels = break_channels + [
-                {
-                    "dmx": "",
-                    "id": "",
-                    "default": 0,
-                    "highlight": None,
-                    "geometry": "",
-                    "break": "",
-                }
-            ] * (max_offset - len(break_channels))
+            break_channels = break_channels + [None] * (
+                max_offset - len(break_channels)
+            )
 
         break_channel = {
             "dmx": offset_coarse,
             "id": str(channel.logical_channels[0].attribute),
             "offset": channel.offset,
-            "default": getValue(channel.default),
-            "highlight": getValue(channel.highlight)
+            "default": channel.default.get_value(),
+            "highlight": channel.highlight.get_value()
             if channel.highlight is not None
             else None,
             "geometry": geometry.name,
@@ -282,7 +287,7 @@ def get_dmx_channels(
                 {
                     "name": channel_function.name,
                     "attribute": channel_function.attribute.str_link,
-                    "default": getValue(channel_function.default),
+                    "default": channel_function.default.get_value(),
                     "real_fade": channel_function.real_fade,
                     "physical_to": channel_function.physical_to,
                     "physical_from": channel_function.physical_from,
@@ -294,6 +299,10 @@ def get_dmx_channels(
                 for channel_function in channel.logical_channels[0].channel_functions
             ]
             break_channel["channel_functions"] = channel_functions
+
+        if not channels_as_dicts:
+            break_channel = channel
+
         break_channels[offset_coarse - 1] = break_channel
 
         if offset_fine > 0:
@@ -301,8 +310,8 @@ def get_dmx_channels(
                 "dmx": offset_fine,
                 "offset": channel.offset,
                 "id": "+" + str(channel.logical_channels[0].attribute),
-                "default": getValue(channel.default, True),
-                "highlight": getValue(channel.highlight)
+                "default": channel.default.get_value(fine=True),
+                "highlight": channel.highlight.get_value()
                 if channel.highlight is not None
                 else None,
                 "geometry": geometry.name,
@@ -314,7 +323,7 @@ def get_dmx_channels(
                     {
                         "name": channel_function.name,
                         "attribute": channel_function.attribute.str_link,
-                        "default": getValue(channel_function.default, True),
+                        "default": channel_function.default.get_value(fine=True),
                         "real_fade": channel_function.real_fade,
                         "physical_to": channel_function.physical_to,
                         "physical_from": channel_function.physical_from,
@@ -329,6 +338,9 @@ def get_dmx_channels(
                 ]
                 break_channel["channel_functions"] = channel_functions
 
+            if not channels_as_dicts:
+                break_channel = channel
+
             break_channels[offset_fine - 1] = break_channel
 
         dmx_channels[channel_break - 1] = break_channels
@@ -337,9 +349,7 @@ def get_dmx_channels(
     # there might be some empty placeholder dmx channel objects. Remove them now:
 
     for index, break_list in enumerate(dmx_channels):
-        dmx_channels[index] = [
-            channel for channel in break_list if channel.get("id", "") != ""
-        ]
+        dmx_channels[index] = [channel for channel in break_list if channel is not None]
 
     # This returns multiple lists of channel arrays. Each list is for one DMX Break, these
     # can be patched onto different DMX addresses. Or, these lists can be flatten into one
@@ -396,9 +406,10 @@ def get_geometries_for_geometry(
 
 def get_dmx_modes_info(
     gdtf_profile: Optional["pygdtf.FixtureType"] = None,
-    include_channels=False,
-    include_channel_functions=False,
-    flattened_channels=False,
+    include_channels: bool = False,
+    include_channel_functions: bool = False,
+    flattened_channels: bool = False,
+    channels_as_dicts: bool = True,
 ):
     dmx_mode_list = []
     if gdtf_profile is None:
@@ -408,13 +419,19 @@ def get_dmx_modes_info(
         mode_id = idx
         mode_name = mode.name
         dmx_channels = get_dmx_channels(
-            gdtf_profile, mode_name, include_channel_functions=include_channel_functions
+            gdtf_profile=gdtf_profile,
+            mode=mode_name,
+            include_channel_functions=include_channel_functions,
+            channels_as_dicts=channels_as_dicts,
         )
         dmx_channels_flattened = [
             channel for break_channels in dmx_channels for channel in break_channels
         ]
         virtual_channels = get_virtual_channels(
-            gdtf_profile, mode_name, include_channel_functions=include_channel_functions
+            gdtf_profile=gdtf_profile,
+            mode=mode_name,
+            include_channel_functions=include_channel_functions,
+            channels_as_dicts=channels_as_dicts,
         )
         dmx_mode_info = {
             "mode_id": mode_id,
