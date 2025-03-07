@@ -270,9 +270,9 @@ class FixtureType:
 
         revision_collect = self._root.find("Revisions")
         if revision_collect is not None:
-            self.revisions = [
-                Revision(xml_node=i) for i in revision_collect.findall("Revision")
-            ]
+            self.revisions = RevisionsList(
+                [Revision(xml_node=i) for i in revision_collect.findall("Revision")]
+            )
         else:
             self.revisions = []
 
@@ -1543,6 +1543,15 @@ class MacroVisualValue(BaseNode):
         self.value = DmxValue(xml_node.attrib.get("Value"))
         self.channel_function = NodeLink(
             "DMXChannelCollect", xml_node.attrib.get("ChannelFunction")
+        )
+
+
+class RevisionsList(list):
+    def revisions_sorted(self, reverse: bool = False):
+        return sorted(
+            self,
+            key=lambda revision: utils.parse_date(revision.date),
+            reverse=reverse,
         )
 
 
