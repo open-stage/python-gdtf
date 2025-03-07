@@ -4,18 +4,6 @@ from typing import Any, Dict, List, Optional
 import pygdtf
 
 
-def getValue(dmx_value, fine=False):
-    if dmx_value.byte_count == 1:
-        return dmx_value.value
-
-    msb = (dmx_value.value >> 8) & 0xFF
-    lsb = dmx_value.value & 0xFF
-
-    if not fine:
-        return msb
-    return lsb
-
-
 def get_dmx_mode_by_name(
     gdtf_profile: Optional["pygdtf.FixtureType"] = None, mode_name: Optional[str] = None
 ) -> Optional["pygdtf.DmxMode"]:
