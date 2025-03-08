@@ -156,7 +156,7 @@ class FixtureType:
             if properties is not None:
                 self.properties = Properties(xml_node=properties)
             else:
-                self.properties: Properties = Properties()
+                self.properties = Properties()
 
         self.models = []
         model_collect = self._root.find("Models")
@@ -1140,6 +1140,21 @@ class Break(BaseNode):
         return f"Break: {self.dmx_break}, Offset: {self.dmx_offset}"
 
 
+class DmxChannels(list):
+    def __init__(self, main_list=None, second_list=None):
+        super().__init__(main_list if main_list is not None else [])
+        self._second_list = second_list if second_list is not None else []
+
+    def as_dict(self):
+        # We could add better "to dict" conversion
+        # to the DmxChannel and to all it's children.
+        # At this point, we will keep using the .utils get_dmx_channels method
+        return DmxChannels(self._second_list)
+
+    def flattened(self):
+        return [channel for break_channels in self for channel in break_channels]
+
+
 class DmxMode(BaseNode):
     def __init__(
         self,
@@ -1152,7 +1167,6 @@ class DmxMode(BaseNode):
         relations: Optional[List["Relation"]] = None,
         ft_macros: Optional[List["Macro"]] = None,
         fixture_type: Optional["FixtureType"] = None,
-        dmx_breaks: Optional[int] = 0,
         *args,
         **kwargs,
     ):
@@ -1180,7 +1194,6 @@ class DmxMode(BaseNode):
         else:
             self.ft_macros = []
         self.fixture_type = fixture_type
-        self.dmx_breaks = dmx_breaks
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
@@ -1195,21 +1208,35 @@ class DmxMode(BaseNode):
                 for i in dmx_channels_collect.findall("DMXChannel")
             ]
 
-        self.dmx_channels = get_dmx_channels(
+        dmx_channels_dicts = get_dmx_channels(
             gdtf_profile=self.fixture_type,
             include_channel_functions=True,
-            channels_as_dicts=False,
+            as_dicts=True,
             dmx_mode=self,
         )
 
-        self.dmx_breaks = len(self.dmx_channels)
-
-        self.virtual_channels = get_virtual_channels(
+        virtual_channels_dicts = get_virtual_channels(
             gdtf_profile=self.fixture_type,
             include_channel_functions=True,
-            channels_as_dicts=False,
+            as_dicts=True,
             dmx_mode=self,
         )
+        dmx_channels = get_dmx_channels(
+            gdtf_profile=self.fixture_type,
+            include_channel_functions=True,
+            as_dicts=False,
+            dmx_mode=self,
+        )
+
+        virtual_channels = get_virtual_channels(
+            gdtf_profile=self.fixture_type,
+            include_channel_functions=True,
+            as_dicts=False,
+            dmx_mode=self,
+        )
+
+        self.dmx_channels = DmxChannels(dmx_channels, dmx_channels_dicts)
+        self.virtual_channels = DmxChannels(virtual_channels, virtual_channels_dicts)
 
         relations_node = xml_node.find("Relations")
         if relations_node is not None:
@@ -1293,6 +1320,12 @@ class DmxChannel(BaseNode):
                     )
                     if channel_function_name == str(self.initial_function):
                         self.default = channel_function.default
+
+    def __str__(self):
+        return f"{self.name}, {self.offset}"
+
+    def __repr__(self):
+        return f"{self.name}, {self.offset}"
 
 
 class LogicalChannel(BaseNode):
@@ -1623,6 +1656,9 @@ class Revision(BaseNode):
                 return int(parse_date(self.date).timestamp())
 
     def __str__(self):
+        return f"{self.text} {self.date}"
+
+    def __repr__(self):
         return f"{self.text} {self.date}"
 
 
