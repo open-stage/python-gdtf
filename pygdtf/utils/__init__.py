@@ -132,7 +132,7 @@ def get_virtual_channels(
     gdtf_profile: Optional["pygdtf.FixtureType"] = None,
     mode: Optional[str] = None,
     include_channel_functions: bool = True,
-    channels_as_dicts: bool = True,
+    as_dicts: bool = True,
     dmx_mode: Optional["pygdtf.DmxMode"] = None,
 ) -> List["Dict"]:
     """Returns virtual channels"""
@@ -180,7 +180,7 @@ def get_virtual_channels(
                 ]
                 virtual_channel["channel_functions"] = channel_functions
 
-            if not channels_as_dicts:
+            if not as_dicts:
                 virtual_channel = channel
             virtual_channels.append(virtual_channel)
     return virtual_channels
@@ -190,7 +190,7 @@ def get_dmx_channels(
     gdtf_profile: Optional["pygdtf.FixtureType"] = None,
     mode: Optional[str] = None,
     include_channel_functions: bool = True,
-    channels_as_dicts: bool = True,
+    as_dicts: bool = True,
     dmx_mode: Optional["pygdtf.DmxMode"] = None,
 ) -> List["Dict"]:
     """Returns list of arrays, each array is one DMX Break,
@@ -300,7 +300,7 @@ def get_dmx_channels(
             ]
             break_channel["channel_functions"] = channel_functions
 
-        if not channels_as_dicts:
+        if not as_dicts:
             break_channel = channel
 
         break_channels[offset_coarse - 1] = break_channel
@@ -338,7 +338,7 @@ def get_dmx_channels(
                 ]
                 break_channel["channel_functions"] = channel_functions
 
-            if not channels_as_dicts:
+            if not as_dicts:
                 break_channel = channel
 
             break_channels[offset_fine - 1] = break_channel
@@ -409,7 +409,7 @@ def get_dmx_modes_info(
     include_channels: bool = False,
     include_channel_functions: bool = False,
     flattened_channels: bool = False,
-    channels_as_dicts: bool = True,
+    as_dicts: bool = True,
 ):
     dmx_mode_list = []
     if gdtf_profile is None:
@@ -422,7 +422,7 @@ def get_dmx_modes_info(
             gdtf_profile=gdtf_profile,
             mode=mode_name,
             include_channel_functions=include_channel_functions,
-            channels_as_dicts=channels_as_dicts,
+            as_dicts=as_dicts,
         )
         dmx_channels_flattened = [
             channel for break_channels in dmx_channels for channel in break_channels
@@ -431,7 +431,7 @@ def get_dmx_modes_info(
             gdtf_profile=gdtf_profile,
             mode=mode_name,
             include_channel_functions=include_channel_functions,
-            channels_as_dicts=channels_as_dicts,
+            as_dicts=as_dicts,
         )
         dmx_mode_info = {
             "mode_id": mode_id,
