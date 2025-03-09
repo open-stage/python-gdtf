@@ -406,9 +406,9 @@ def get_dmx_modes_info(
     for idx, mode in enumerate(gdtf_profile.dmx_modes):
         mode_id = idx
         mode_name = mode.name
-        dmx_channels = mode.dmx_channels.as_dict()
+        dmx_channels = mode.dmx_channels.as_dicts()
         dmx_channels_flattened = dmx_channels.flattened()
-        virtual_channels = mode.virtual_channels.as_dict()
+        virtual_channels = mode.virtual_channels.as_dicts()
 
         dmx_mode_info = {
             "mode_id": mode_id,
@@ -543,8 +543,8 @@ def calculate_complexity(gdtf_profile: Optional["pygdtf.FixtureType"] = None):
             geometry_trees_count += 1
             geometries.append(mode.geometry)
 
-        virtual_channels_breaks = mode.virtual_channels.as_dict()
-        flattened_channels = mode.dmx_channels.as_dict().flattened()
+        virtual_channels_breaks = mode.virtual_channels.as_dicts()
+        flattened_channels = mode.dmx_channels.as_dicts().flattened()
 
         dmx_channels_count += len(flattened_channels)
         virtual_channels_count += len(virtual_channels_breaks)
