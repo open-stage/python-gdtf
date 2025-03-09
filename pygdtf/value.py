@@ -195,6 +195,17 @@ class DmxValue:
     def __str__(self):
         return f"Value: {self.value}, Byte count: {self.byte_count}"
 
+    def get_value(self, fine=False):
+        if self.byte_count == 1:
+            return self.value
+
+        msb = (self.value >> 8) & 0xFF
+        lsb = self.value & 0xFF
+
+        if not fine:
+            return msb
+        return lsb
+
 
 class ColorCIE:
     def __init__(
