@@ -8,7 +8,7 @@ from xml.etree.ElementTree import Element
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.0.6.dev13"
+__version__ = "1.0.6.dev14"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -1179,11 +1179,16 @@ class Break(BaseNode):
 
 
 class DmxChannels(list):
+    """By default, we return a single list of channels. These might have different
+    dmx_breaks. One can get a list of lists of channels grouped by the dmx_break by
+    using the by_breaks() method. The DmxMode class contains dmx_channels_count,
+    virtual_channels_count, and dmx_breaks_count to have a quick access to these."""
+
     def __init__(self, main_list=None, second_list=None):
         super().__init__(main_list if main_list is not None else [])
         self._second_list = second_list if second_list is not None else []
 
-    def as_dict(self):
+    def as_dicts(self):
         # We could add better "to dict" conversion
         # to the DmxChannel and to all it's children.
         # At this point, we will keep using the .utils get_dmx_channels method
@@ -1191,6 +1196,19 @@ class DmxChannels(list):
 
     def flattened(self):
         return [channel for break_channels in self for channel in break_channels]
+
+    def by_breaks(self):
+        # this is to unflatten the lists again
+        grouped = {}
+
+        for item in self:
+            key = item.dmx_break
+
+            if key not in grouped:
+                grouped[key] = []
+            grouped[key].append(item)
+
+        return list(grouped.values())
 
 
 class DmxModes(list):
@@ -1210,6 +1228,7 @@ class DmxMode(BaseNode):
         _dmx_channels: Optional[List["DmxChannel"]] = None,
         dmx_channels: Optional[List] = None,
         dmx_channels_count: int = 0,
+        dmx_breaks_count: int = 0,
         virtual_channels: Optional[List] = None,
         virtual_channels_count: int = 0,
         relations: Optional[List["Relation"]] = None,
@@ -1235,6 +1254,7 @@ class DmxMode(BaseNode):
             self.virtual_channels = []
         self.dmx_channels_count = dmx_channels_count
         self.virtual_channels_count = virtual_channels_count
+        self.dmx_breaks_count = dmx_breaks_count
         if relations is not None:
             self.relations = relations
         else:
@@ -1278,6 +1298,10 @@ class DmxMode(BaseNode):
             dmx_mode=self,
         )
 
+        flattened_channels = [
+            channel for break_channels in dmx_channels for channel in break_channels
+        ]
+
         virtual_channels = get_virtual_channels(
             gdtf_profile=self.fixture_type,
             include_channel_functions=True,
@@ -1285,10 +1309,11 @@ class DmxMode(BaseNode):
             dmx_mode=self,
         )
 
-        self.dmx_channels = DmxChannels(dmx_channels, dmx_channels_dicts)
+        self.dmx_channels = DmxChannels(flattened_channels, dmx_channels_dicts)
         self.virtual_channels = DmxChannels(virtual_channels, virtual_channels_dicts)
-        self.dmx_channels_count = len(self.dmx_channels.as_dict().flattened())
+        self.dmx_channels_count = len(self.dmx_channels.as_dicts().flattened())
         self.virtual_channels_count = len(self.virtual_channels)
+        self.dmx_breaks_count = len(self.dmx_channels.as_dicts())
 
         relations_node = xml_node.find("Relations")
         if relations_node is not None:
