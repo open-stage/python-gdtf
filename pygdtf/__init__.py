@@ -8,7 +8,7 @@ from xml.etree.ElementTree import Element
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.0.6.dev2"
+__version__ = "1.0.6.dev10"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -158,10 +158,12 @@ class FixtureType:
             else:
                 self.properties = Properties()
 
-        self.models = []
+        self.models = Models()
         model_collect = self._root.find("Models")
         if model_collect is not None:
-            self.models = [Model(xml_node=i) for i in model_collect.findall("Model")]
+            self.models = Models(
+                [Model(xml_node=i) for i in model_collect.findall("Model")]
+            )
         for model in self.models:
             if self._package is not None:
                 if f"models/gltf/{model.file.name}.glb" in self._package.namelist():
@@ -175,7 +177,7 @@ class FixtureType:
                         f"models/3ds/{model.file.name}.3ds"
                     ).CRC
 
-        self.geometries = []
+        self.geometries = Geometries()
         geometry_collect = self._root.find("Geometries")
         if geometry_collect is not None:
             for i in geometry_collect.findall("Geometry"):
@@ -253,12 +255,14 @@ class FixtureType:
 
         dmx_mode_collect = self._root.find("DMXModes")
         if dmx_mode_collect is not None:
-            self.dmx_modes = [
-                DmxMode(xml_node=i, fixture_type=self)
-                for i in dmx_mode_collect.findall("DMXMode")
-            ]
+            self.dmx_modes = DmxModes(
+                [
+                    DmxMode(xml_node=i, fixture_type=self)
+                    for i in dmx_mode_collect.findall("DMXMode")
+                ]
+            )
         else:
-            self.dmx_modes = []
+            self.dmx_modes = DmxModes()
 
         if not self.dmx_modes:
             self.dmx_modes.append(DmxMode(name="Default"))
@@ -271,7 +275,7 @@ class FixtureType:
 
         revision_collect = self._root.find("Revisions")
         if revision_collect is not None:
-            self.revisions = RevisionsList(
+            self.revisions = Revisions(
                 [Revision(xml_node=i) for i in revision_collect.findall("Revision")]
             )
         else:
@@ -662,6 +666,15 @@ class Cri(BaseNode):
         self.color_temperature = int(xml_node.attrib.get("ColorTemperature", 100))
 
 
+class Models(list):
+    def get_model_by_name(self, model_name):
+        for model in self:
+            if model.name == model_name:
+                return model
+
+        return None
+
+
 class Model(BaseNode):
     def __init__(
         self,
@@ -691,6 +704,31 @@ class Model(BaseNode):
         self.file = Resource(xml_node.attrib.get("File", ""))
 
 
+class Geometries(list):
+    def get_geometry_by_name(self, geometry_name):
+        def iterate_geometries(collector):
+            if hasattr(collector, "name"):
+                if collector.name == geometry_name:
+                    matched.append(collector)
+
+            iterator = collector
+            if hasattr(collector, "geometries"):
+                iterator = collector.geometries
+
+            for g in iterator:
+                if g.name == geometry_name:
+                    matched.append(g)
+                if hasattr(g, "geometries"):
+                    iterate_geometries(g)
+
+        matched = []
+        iterate_geometries(self)
+        if matched:
+            return matched[0]
+
+        return None
+
+
 class Geometry(BaseNode):
     def __init__(
         self,
@@ -709,7 +747,7 @@ class Geometry(BaseNode):
         if geometries is not None:
             self.geometries = geometries
         else:
-            self.geometries = []
+            self.geometries = Geometries()
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
@@ -1153,6 +1191,14 @@ class DmxChannels(list):
 
     def flattened(self):
         return [channel for break_channels in self for channel in break_channels]
+
+
+class DmxModes(list):
+    def get_mode_by_name(self, mode_name):
+        for mode in self:
+            if mode.name == mode_name:
+                return mode
+        return None
 
 
 class DmxMode(BaseNode):
@@ -1613,7 +1659,7 @@ class MacroVisualValue(BaseNode):
         )
 
 
-class RevisionsList(list):
+class Revisions(list):
     def revisions_sorted(self, reverse: bool = False):
         return sorted(
             self,
