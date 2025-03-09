@@ -117,8 +117,22 @@ def get_channels_for_geometry(
         name = geometry.geometry
 
     for channel in get_channels_by_geometry(name, dmx_channels):
-        # Reference dmx break overwrite is handled by get_dmx_channels, maybe it
-        # could/should be handled here?
+        if (
+            isinstance(geometry, pygdtf.GeometryReference)
+            and channel.dmx_break == "Overwrite"
+        ):
+            if len(geometry.breaks):
+                channel.dmx_break = geometry.breaks[
+                    -1
+                ].dmx_break  # overwrite break is always the last one
+            else:
+                channel.dmx_break = 1
+
+        if channel.dmx_break == "Overwrite":
+            # This only happens in an incorrect GDTF file
+            # as Overwrite can only be on Referenced geometry
+            channel.dmx_break = 1
+
         channel_list.append((channel, geometry))
     if hasattr(geometry, "geometries"):
         for sub_geometry in geometry.geometries:
@@ -137,13 +151,16 @@ def get_virtual_channels(
 ) -> List["Dict"]:
     """Returns virtual channels"""
 
+    if gdtf_profile is None:
+        return []
+
     if dmx_mode is None:
-        dmx_mode = get_dmx_mode_by_name(gdtf_profile, mode)
+        dmx_mode = gdtf_profile.dmx_modes.get_mode_by_name(mode)
 
     if dmx_mode is None:
         return []
 
-    root_geometry = get_geometry_by_name(gdtf_profile, dmx_mode.geometry)
+    root_geometry = gdtf_profile.geometries.get_geometry_by_name(dmx_mode.geometry)
     device_channels = get_channels_for_geometry(
         gdtf_profile, root_geometry, dmx_mode._dmx_channels, []
     )
@@ -200,12 +217,12 @@ def get_dmx_channels(
         return []
 
     if dmx_mode is None:
-        dmx_mode = get_dmx_mode_by_name(gdtf_profile, mode)
+        dmx_mode = gdtf_profile.dmx_modes.get_mode_by_name(mode)
 
     if dmx_mode is None:
         return []
 
-    root_geometry = get_geometry_by_name(gdtf_profile, dmx_mode.geometry)
+    root_geometry = gdtf_profile.geometries.get_geometry_by_name(dmx_mode.geometry)
     if root_geometry is None:
         if len(gdtf_profile.geometries) == 1:
             root_geometry = gdtf_profile.geometries[0]
@@ -222,22 +239,6 @@ def get_dmx_channels(
         if channel.offset is None:  # skip virtual channels
             continue
         channel_break = channel.dmx_break
-
-        if (
-            isinstance(geometry, pygdtf.GeometryReference)
-            and channel.dmx_break == "Overwrite"
-        ):
-            if len(geometry.breaks):
-                channel_break = geometry.breaks[
-                    -1
-                ].dmx_break  # overwrite break is always the last one
-            else:
-                channel_break = 1
-
-        if channel_break == "Overwrite":
-            # This only happens in an incorrect GDTF file
-            # as Overwrite can only be on Referenced geometry
-            channel_break = 1
 
         if len(dmx_channels) < channel_break:
             # create sublist for each group of dmx breaks,
@@ -370,7 +371,7 @@ def get_used_geometries(
         return []
 
     for mode in gdtf_profile.dmx_modes:
-        geometry = get_geometry_by_name(gdtf_profile, mode.geometry)
+        geometry = gdtf_profile.geometries.get_geometry_by_name(mode.geometry)
         geometries_list = get_geometries_for_geometry(
             gdtf_profile, geometry, geometries_list
         )
@@ -383,6 +384,9 @@ def get_geometries_for_geometry(
     geometry: Optional["pygdtf.Geometry"] = None,
     geometries_list: List[str] = [],
 ) -> List[str]:
+    if gdtf_profile is None:
+        return []
+
     if geometry is None:
         return []
 
@@ -390,7 +394,9 @@ def get_geometries_for_geometry(
 
     if isinstance(geometry, pygdtf.GeometryReference):
         if geometry.geometry:
-            ref_geometry = get_geometry_by_name(gdtf_profile, geometry.geometry)
+            ref_geometry = gdtf_profile.geometries.get_geometry_by_name(
+                geometry.geometry
+            )
             geometries_list = get_geometries_for_geometry(
                 gdtf_profile, ref_geometry, geometries_list
             )
@@ -418,21 +424,10 @@ def get_dmx_modes_info(
     for idx, mode in enumerate(gdtf_profile.dmx_modes):
         mode_id = idx
         mode_name = mode.name
-        dmx_channels = get_dmx_channels(
-            gdtf_profile=gdtf_profile,
-            mode=mode_name,
-            include_channel_functions=include_channel_functions,
-            as_dicts=as_dicts,
-        )
-        dmx_channels_flattened = [
-            channel for break_channels in dmx_channels for channel in break_channels
-        ]
-        virtual_channels = get_virtual_channels(
-            gdtf_profile=gdtf_profile,
-            mode=mode_name,
-            include_channel_functions=include_channel_functions,
-            as_dicts=as_dicts,
-        )
+        dmx_channels = mode.dmx_channels.as_dict()
+        dmx_channels_flattened = dmx_channels.flattened()
+        virtual_channels = mode.virtual_channels.as_dict()
+
         dmx_mode_info = {
             "mode_id": mode_id,
             "mode_name": mode_name,
@@ -461,9 +456,10 @@ def get_beam_geometries_for_mode(
     if gdtf_profile is None:
         return []
 
-    dmx_mode = get_dmx_mode_by_name(gdtf_profile, mode_name)
+    dmx_mode = gdtf_profile.dmx_modes.get_mode_by_name(mode_name)
+
     if dmx_mode is not None:
-        root_geometry = get_geometry_by_name(gdtf_profile, dmx_mode.geometry)
+        root_geometry = gdtf_profile.geometries.get_geometry_by_name(dmx_mode.geometry)
         return get_beam_geometries(gdtf_profile, root_geometry, [])
 
 
@@ -484,7 +480,7 @@ def get_beam_geometries(
         if geometry.geometry is not None:
             geometry_list = get_beam_geometries(
                 gdtf_profile,
-                get_geometry_by_name(gdtf_profile, geometry.geometry),
+                gdtf_profile.geometries.get_geometry_by_name(geometry.geometry),
                 geometry_list,
             )
 
@@ -565,15 +561,9 @@ def calculate_complexity(gdtf_profile: Optional["pygdtf.FixtureType"] = None):
             geometry_trees_count += 1
             geometries.append(mode.geometry)
 
-        dmx_channels_breaks = pygdtf.utils.get_dmx_channels(gdtf_profile, mode.name)
-        virtual_channels_breaks = pygdtf.utils.get_virtual_channels(
-            gdtf_profile, mode.name
-        )
-        flattened_channels = [
-            channel
-            for break_channels in dmx_channels_breaks
-            for channel in break_channels
-        ]
+        virtual_channels_breaks = mode.virtual_channels.as_dict()
+        flattened_channels = mode.dmx_channels.as_dict().flattened()
+
         dmx_channels_count += len(flattened_channels)
         virtual_channels_count += len(virtual_channels_breaks)
         channel_functions = [
