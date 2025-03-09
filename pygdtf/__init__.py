@@ -8,7 +8,7 @@ from xml.etree.ElementTree import Element
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.0.6.dev10"
+__version__ = "1.0.6.dev13"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -1209,7 +1209,9 @@ class DmxMode(BaseNode):
         geometry: Optional[str] = None,
         _dmx_channels: Optional[List["DmxChannel"]] = None,
         dmx_channels: Optional[List] = None,
+        dmx_channels_count: int = 0,
         virtual_channels: Optional[List] = None,
+        virtual_channels_count: int = 0,
         relations: Optional[List["Relation"]] = None,
         ft_macros: Optional[List["Macro"]] = None,
         fixture_type: Optional["FixtureType"] = None,
@@ -1231,6 +1233,8 @@ class DmxMode(BaseNode):
             self.virtual_channels = virtual_channels
         else:
             self.virtual_channels = []
+        self.dmx_channels_count = dmx_channels_count
+        self.virtual_channels_count = virtual_channels_count
         if relations is not None:
             self.relations = relations
         else:
@@ -1283,6 +1287,8 @@ class DmxMode(BaseNode):
 
         self.dmx_channels = DmxChannels(dmx_channels, dmx_channels_dicts)
         self.virtual_channels = DmxChannels(virtual_channels, virtual_channels_dicts)
+        self.dmx_channels_count = len(self.dmx_channels.as_dict().flattened())
+        self.virtual_channels_count = len(self.virtual_channels)
 
         relations_node = xml_node.find("Relations")
         if relations_node is not None:
@@ -1368,10 +1374,10 @@ class DmxChannel(BaseNode):
                         self.default = channel_function.default
 
     def __str__(self):
-        return f"{self.name}, {self.offset}"
+        return f"{self.name} ({self.offset})"
 
     def __repr__(self):
-        return f"{self.name}, {self.offset}"
+        return f"{self.name} ({self.offset})"
 
 
 class LogicalChannel(BaseNode):

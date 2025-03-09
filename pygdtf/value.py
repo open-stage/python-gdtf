@@ -195,12 +195,12 @@ class DmxValue:
     def __str__(self):
         return f"Value: {self.value}, Byte count: {self.byte_count}"
 
-    def get_value(dmx_value, fine=False):
-        if dmx_value.byte_count == 1:
-            return dmx_value.value
+    def get_value(self, fine=False):
+        if self.byte_count == 1:
+            return self.value
 
-        msb = (dmx_value.value >> 8) & 0xFF
-        lsb = dmx_value.value & 0xFF
+        msb = (self.value >> 8) & 0xFF
+        lsb = self.value & 0xFF
 
         if not fine:
             return msb

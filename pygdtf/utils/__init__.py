@@ -1,6 +1,6 @@
 import datetime
 from typing import Any, Dict, List, Optional
-
+import copy
 import pygdtf
 
 
@@ -117,23 +117,26 @@ def get_channels_for_geometry(
         name = geometry.geometry
 
     for channel in get_channels_by_geometry(name, dmx_channels):
+        new_channel = None
         if (
             isinstance(geometry, pygdtf.GeometryReference)
             and channel.dmx_break == "Overwrite"
         ):
+            new_channel = copy.deepcopy(channel)
             if len(geometry.breaks):
-                channel.dmx_break = geometry.breaks[
+                new_channel.dmx_break = geometry.breaks[
                     -1
                 ].dmx_break  # overwrite break is always the last one
             else:
-                channel.dmx_break = 1
+                new_channel.dmx_break = 1
 
         if channel.dmx_break == "Overwrite":
             # This only happens in an incorrect GDTF file
             # as Overwrite can only be on Referenced geometry
-            channel.dmx_break = 1
+            new_channel = copy.deepcopy(channel)
+            new_channel.dmx_break = 1
 
-        channel_list.append((channel, geometry))
+        channel_list.append((channel or new_channel, geometry))
     if hasattr(geometry, "geometries"):
         for sub_geometry in geometry.geometries:
             channel_list = get_channels_for_geometry(
@@ -246,43 +249,34 @@ def get_dmx_channels(
             dmx_channels = dmx_channels + [[]] * (channel_break - len(dmx_channels))
 
         # get list of channels of a particular break:
-        break_channels = dmx_channels[channel_break - 1]  # off by one...
+        break_channels = dmx_channels[channel_break - 1]  # off by one in list indexing
 
         break_addition = 0
 
         if hasattr(geometry, "breaks"):
-            # a dmx address offset defines how much this channel is offset from it's actual address
+            # a dmx offset defined in a geometry defines how much this channel is offset from it's actual address
             dmx_offset = get_address_by_break(geometry.breaks, channel_break)
             if dmx_offset is not None:
                 break_addition = dmx_offset.address - 1  # here is also off by one
+                channel = copy.deepcopy(channel)
 
-        # TODO: rework below to support ultra and uber
-        offset_coarse = channel.offset[0] + break_addition
-        offset_fine = 0
+        _offsets = [0, 0, 0, 0]  # coarse, fine, ultra, uber
 
-        if len(channel.offset) > 1:
-            offset_fine = channel.offset[1] + break_addition
+        for i, offset in enumerate(channel.offset):
+            _offsets[i] = offset + break_addition
+            channel.offset[i] = _offsets[i]
 
-        max_offset = max([offset_coarse, offset_fine])
+        offset_coarse, offset_fine, offset_ultra, offset_uber = _offsets
+
+        max_offset = max([offset_coarse, offset_fine, offset_ultra, offset_uber])
 
         if len(break_channels) < max_offset:
-            # print(len(break_channels), break_channels)
             break_channels = break_channels + [None] * (
                 max_offset - len(break_channels)
             )
 
-        break_channel = {
-            "dmx": offset_coarse,
-            "id": str(channel.logical_channels[0].attribute),
-            "offset": channel.offset,
-            "default": channel.default.get_value(),
-            "highlight": channel.highlight.get_value()
-            if channel.highlight is not None
-            else None,
-            "geometry": geometry.name,
-            "break": channel_break,
-            "parent_name": geometry.parent_name,
-        }
+        break_channel = create_break_channel(offset_coarse, channel, geometry, 0)
+
         if include_channel_functions:
             channel_functions = [
                 {
@@ -306,43 +300,16 @@ def get_dmx_channels(
 
         break_channels[offset_coarse - 1] = break_channel
 
-        if offset_fine > 0:
-            break_channel = {
-                "dmx": offset_fine,
-                "offset": channel.offset,
-                "id": "+" + str(channel.logical_channels[0].attribute),
-                "default": channel.default.get_value(fine=True),
-                "highlight": channel.highlight.get_value()
-                if channel.highlight is not None
-                else None,
-                "geometry": geometry.name,
-                "break": channel_break,
-                "parent_name": geometry.parent_name,
-            }
-            if include_channel_functions:
-                channel_functions = [
-                    {
-                        "name": channel_function.name,
-                        "attribute": channel_function.attribute.str_link,
-                        "default": channel_function.default.get_value(fine=True),
-                        "real_fade": channel_function.real_fade,
-                        "physical_to": channel_function.physical_to,
-                        "physical_from": channel_function.physical_from,
-                        "channel_sets": [
-                            channel_set.name
-                            for channel_set in channel_function.channel_sets
-                        ],
-                    }
-                    for channel_function in channel.logical_channels[
-                        0
-                    ].channel_functions
-                ]
-                break_channel["channel_functions"] = channel_functions
+        for idx, offset_value in enumerate(
+            [offset_fine, offset_ultra, offset_uber], start=1
+        ):
+            if offset_value > 0:
+                break_channel = create_break_channel(
+                    offset_value, channel, geometry, idx
+                )
 
-            if not as_dicts:
-                break_channel = channel
-
-            break_channels[offset_fine - 1] = break_channel
+                if as_dicts:
+                    break_channels[offset_value - 1] = break_channel
 
         dmx_channels[channel_break - 1] = break_channels
 
@@ -358,6 +325,21 @@ def get_dmx_channels(
     # [channel for break_channels in dmx_channels for channel in break_channels]
     # Here, we should return the list of arrays, so the consumer can decide how to process it.
     return dmx_channels
+
+
+def create_break_channel(offset, channel, geometry, offset_index):
+    return {
+        "dmx": offset,
+        "offset": channel.offset,
+        "id": "+" * offset_index + str(channel.logical_channels[0].attribute),
+        "default": channel.default.get_value(fine=offset_index > 0),
+        "highlight": channel.highlight.get_value()
+        if channel.highlight is not None
+        else None,
+        "geometry": geometry.name,
+        "break": channel.dmx_break,
+        "parent_name": geometry.parent_name,
+    }
 
 
 def get_used_geometries(
