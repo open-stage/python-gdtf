@@ -195,6 +195,9 @@ class DmxValue:
     def __str__(self):
         return f"Value: {self.value}, Byte count: {self.byte_count}"
 
+    def __repr__(self):
+        return f"Value: {self.value}, Byte count: {self.byte_count}"
+
     def get_value(self, fine=False):
         if self.byte_count == 1:
             return self.value
@@ -289,6 +292,9 @@ class NodeLink:
 
     def __str__(self):
         return str(self.str_link)
+
+    def __repr__(self):
+        return f"{self.start_point} {self.str_link}"
 
 
 ColorSpaceDefinition = namedtuple("ColorSpaceDefinition", "r g b w")

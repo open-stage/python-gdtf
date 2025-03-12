@@ -1382,6 +1382,8 @@ class DmxChannel(BaseNode):
             LogicalChannel(xml_node=i) for i in xml_node.findall("LogicalChannel")
         ] or [LogicalChannel(attribute=NodeLink("Attributes", "NoFeature"))]
 
+        # get default value
+
         _logical_channel = self.logical_channels[0]
         self.name = f"{self.geometry}_{_logical_channel.attribute}"
         initial_function_node = xml_node.attrib.get("InitialFunction")
@@ -1397,6 +1399,34 @@ class DmxChannel(BaseNode):
                     )
                     if channel_function_name == str(self.initial_function):
                         self.default = channel_function.default
+
+        # calculate dmx_to in channel functions
+        for logical_channel in self.logical_channels:
+            previous_dmx_from = None
+            for channel_function in sorted(
+                logical_channel.channel_functions,
+                key=lambda channel_function: channel_function.dmx_from.value,
+                reverse=True,
+            ):
+                if self.offset is None:
+                    byte_count = channel_function.dmx_from.byte_count
+                else:
+                    byte_count = len(self.offset)
+
+                if previous_dmx_from is None:
+                    # set max value
+                    channel_function.dmx_to = DmxValue("0/1")
+                    channel_function.dmx_to.value = (1 << (byte_count * 8)) - 1
+                    channel_function.dmx_to.byte_count = byte_count
+                    previous_dmx_from = channel_function.dmx_from
+                    if channel_function.dmx_from.value == 0:
+                        # reset in case of mode masters
+                        previous_dmx_from = None
+                else:
+                    # set value of the previous dmx_from -1
+                    channel_function.dmx_to = copy.deepcopy(previous_dmx_from)
+                    channel_function.dmx_to.value -= 1
+                    previous_dmx_from = channel_function.dmx_from
 
     def __str__(self):
         return f"{self.name} ({self.offset})"
@@ -1425,6 +1455,7 @@ class LogicalChannel(BaseNode):
         if channel_functions is not None:
             self.channel_functions = channel_functions
         else:
+            # make this invalid GDTF file valid
             self.channel_functions = [
                 ChannelFunction(
                     attribute=NodeLink("Attributes", "NoFeature"),
@@ -1442,11 +1473,15 @@ class LogicalChannel(BaseNode):
         self.channel_functions = [
             ChannelFunction(xml_node=i) for i in xml_node.findall("ChannelFunction")
         ] or [
+            # make this invalid GDTF file valid
             ChannelFunction(
                 attribute=NodeLink("Attributes", "NoFeature"),
                 default=DmxValue("0/1"),
             )
         ]
+
+    def __repr__(self):
+        return f"{self.attribute.str_link}"
 
 
 class ChannelFunction(BaseNode):
@@ -1456,6 +1491,7 @@ class ChannelFunction(BaseNode):
         attribute: Union["NodeLink", str] = NodeLink("Attributes", "NoFeature"),
         original_attribute: Optional[str] = None,
         dmx_from: "DmxValue" = DmxValue("0/1"),
+        dmx_to: "DmxValue" = DmxValue("0/1"),
         default: "DmxValue" = DmxValue("0/1"),
         physical_from: float = 0,
         physical_to: float = 1,
@@ -1499,6 +1535,9 @@ class ChannelFunction(BaseNode):
         )
         self.original_attribute = xml_node.attrib.get("OriginalAttribute")
         self.dmx_from = DmxValue(xml_node.attrib.get("DMXFrom", "0/1"))
+        _dmx_from = copy.deepcopy(self.dmx_from)
+        _dmx_from.value += 1
+        self.dmx_to = _dmx_from
         self.default = DmxValue(xml_node.attrib.get("Default", "0/1"))
         self.physical_from = float(xml_node.attrib.get("PhysicalFrom", 0))
         self.physical_to = float(xml_node.attrib.get("PhysicalTo", 1))
@@ -1516,6 +1555,9 @@ class ChannelFunction(BaseNode):
 
     def __str__(self):
         return f"{self.name}, {self.attribute.str_link}"
+
+    def __repr__(self):
+        return f"Name: {self.name}, Link: {self.attribute}, DMX From: {self.dmx_from}, DMX To: {self.dmx_to}"
 
 
 class ChannelSet(BaseNode):
