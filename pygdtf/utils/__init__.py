@@ -282,6 +282,8 @@ def get_dmx_channels(
                 {
                     "name": channel_function.name,
                     "attribute": channel_function.attribute.str_link,
+                    "dmx_from": channel_function.dmx_from.get_value(),
+                    "dmx_to": channel_function.dmx_to.get_value(),
                     "default": channel_function.default.get_value(),
                     "real_fade": channel_function.real_fade,
                     "physical_to": channel_function.physical_to,
