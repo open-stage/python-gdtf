@@ -26,6 +26,18 @@ Used for example by [BlenderDMX](https://github.com/open-stage/blender-dmx).
 
 [![Check links in markdown](https://github.com/open-stage/python-gdtf/actions/workflows/check-links.yaml/badge.svg)](https://github.com/open-stage/python-gdtf/actions/workflows/check-links.yaml)
 
+## Important changes
+
+### Version 1.1.0
+
+⚠️  List of DMX Channels provided by dmx\_mode.dmx\_channels is now a complete
+list of all DMX channels calculated by obtaining DMX channels for geometries,
+Geometry References and so on, no need to use the .utils methods.
+
+⚠️  The list of channels as dictionaries can be obtained by
+dmx\_mode.dmx\_channels.as\_dicts(), the "id" has been renamed to "attribute".
+
+
 ## Installation
 
 ```bash
@@ -49,6 +61,34 @@ gdtf_fixture = pygdtf.FixtureType("BlenderDMX@LED_PAR_64_RGBW@v0.3.gdtf")
 
 # one can also parse just a description.xml file during development or testing
 gdtf_fixture = pygdtf.FixtureType(dsc_file="description.xml")
+
+# now access things like DMX modes, channels and so on
+# get DMX Mode name
+gdtf_fixture.dmx_modes[0].name
+'Mode 1 - Standard 16 - bit'
+
+# get number of DMX channels
+gdtf_fixture.dmx_modes[0].dmx_channels_count
+39
+
+# get number of Virtual channels
+gdtf_fixture.dmx_modes[0].virtual_channels_count
+0
+
+# get number of DMX breaks
+gdtf_fixture.dmx_modes[0].dmx_breaks_count
+1
+
+# get DMX channels as objects
+gdtf_fixture.dmx_modes[0].dmx_channels
+[Yoke_Pan ([1, 2]), Head_Tilt ([3, 4]), Yoke_PanMode ([5]), Base_PositionMSpeed ([6]), Base_Control1 ([7]), ...
+
+# get DMX channels as dict
+gdtf_fixture.dmx_modes[0].dmx_channels.as_dicts()
+
+[[{'dmx': 1, 'offset': [1, 2], 'id': 'Pan', 'default': 128, 'highlight': None, 'geometry': 'Yoke', 'break': 1, 'parent_name': 'Base', 'channel_functions': [{'name': 'Pan', 'attribute': 'Pan', 'dmx_from': 0, 'dmx_to': 255, 'default': 128, 'real_fade': 1.833, 'physical_to': 270.0, 'physical_from': -270.0, 'channel_sets': ['', 'Center', '']}, ...
+
+# see the source code for more methods
 ```
 
 See [BlenderDMX](https://github.com/open-stage/blender-dmx) and
