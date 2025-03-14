@@ -174,7 +174,9 @@ def get_virtual_channels(
         # initial_channel_function = channel.initial_function
         if channel.offset is None:
             virtual_channel = {
-                "id": str(channel.logical_channels[0].channel_functions[0].attribute),
+                "attribute": str(
+                    channel.logical_channels[0].channel_functions[0].attribute
+                ),
                 "default": channel.logical_channels[0]
                 .channel_functions[0]
                 .default.get_value(),
@@ -333,7 +335,7 @@ def create_break_channel(offset, channel, geometry, offset_index):
     return {
         "dmx": offset,
         "offset": channel.offset,
-        "id": "+" * offset_index + str(channel.logical_channels[0].attribute),
+        "attribute": "+" * offset_index + str(channel.logical_channels[0].attribute),
         "default": channel.default.get_value(fine=offset_index > 0),
         "highlight": channel.highlight.get_value()
         if channel.highlight is not None
