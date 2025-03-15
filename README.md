@@ -81,14 +81,18 @@ gdtf_fixture.dmx_modes[0].virtual_channels_count
 gdtf_fixture.dmx_modes[0].dmx_breaks_count
 1
 
-# get DMX channels as objects
-gdtf_fixture.dmx_modes[0].dmx_channels
-[Yoke_Pan ([1, 2]), Head_Tilt ([3, 4]), Yoke_PanMode ([5]), Base_PositionMSpeed ([6]), Base_Control1 ([7]), ...
+# get DMX channels as objects gdtf_fixture.dmx_modes[0].dmx_channels
+<pygdtf.DmxChannel object at 0x7f789c63bb60>, <pygdtf.DmxChannel object at
+0x7f789c375590>, <pygdtf.DmxChannel object at 0x7f789c375a90>,...
 
 # get DMX channels as dict
 gdtf_fixture.dmx_modes[0].dmx_channels.as_dicts()
 
-[[{'dmx': 1, 'offset': [1, 2], 'id': 'Pan', 'default': 128, 'highlight': None, 'geometry': 'Yoke', 'break': 1, 'parent_name': 'Base', 'channel_functions': [{'name': 'Pan', 'attribute': 'Pan', 'dmx_from': 0, 'dmx_to': 255, 'default': 128, 'real_fade': 1.833, 'physical_to': 270.0, 'physical_from': -270.0, 'channel_sets': ['', 'Center', '']}, ...
+[[{'dmx': 1, 'offset': [1, 2], 'id': 'Pan', 'default': 128, 'highlight': None,
+'geometry': 'Yoke', 'break': 1, 'parent_name': 'Base', 'channel_functions':
+[{'name': 'Pan', 'attribute': 'Pan', 'dmx_from': 0, 'dmx_to': 255, 'default':
+128, 'real_fade': 1.833, 'physical_to': 270.0, 'physical_from': -270.0,
+'channel_sets': ['', 'Center', '']}, ...
 
 # see the source code for more methods
 ```
