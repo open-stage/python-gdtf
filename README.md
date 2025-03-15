@@ -37,6 +37,8 @@ Geometry References and so on, no need to use the .utils methods.
 ⚠️  The list of channels as dictionaries can be obtained by
 dmx\_mode.dmx\_channels.as\_dicts(), the "id" has been renamed to "attribute".
 
+⚠️  Many of the .utils package methods have been moved directly to the main part
+of pygdtf. External usage of methods from .util should not be needed anymore.
 
 ## Installation
 
