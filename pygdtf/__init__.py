@@ -8,7 +8,7 @@ from xml.etree.ElementTree import Element
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.0.6.dev19"
+__version__ = "1.0.6.dev20"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -56,6 +56,13 @@ class FixtureType:
             self._root = self._gdtf.find("FixtureType")
         if self._root is not None:
             self._read_xml()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._package is not None:
+            self._package.close()
 
     def _read_xml(self):
         self.data_version = self._gdtf.get("DataVersion", 1.2)
