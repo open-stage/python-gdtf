@@ -39,7 +39,40 @@ dmx\_mode.dmx\_channels.as\_dicts(), the "id" has been renamed to "attribute".
 
 ⚠️  Many of the .utils package methods have been moved directly to the main part
 of pygdtf. External usage of methods from .util should not be needed anymore.
+The previously provided get methods can be replaced by snippets like below,
+allowing greater customization and possible less future code breakage:
 
+#### .utils.get\_dmx\_modes\_info
+
+```python
+modes_info = []
+
+for idx, mode in enumerate(gdtf_fixture.dmx_modes):
+    dmx_mode_info = {
+        "mode_id": idx,
+        "mode_name": mode.name,
+        "mode_dmx_channel_count": mode.dmx_channels_count,
+        "mode_virtual_channel_count": mode.virtual_channels_count,
+        "mode_dmx_breaks_count": mode.dmx_breaks_count,
+        "mode_dmx_channels": mode.dmx_channels.as_dicts(),
+        "mode_virtual_channels": mode.virtual_channels.as_dicts(),
+    }
+    modes_info.append(dmx_mode_info)
+```
+
+#### .utils.get\_geometry\_by\_name
+
+```python
+gdtf_fixture.geometries.get_geometry_by_name("geometry name")
+```
+
+#### .utils.get\_geometry\_by\_type
+
+```python
+#this is a static method and requires a root_geometry
+gdtf_fixture.geometries.get_geometry_by_type(geometry_root, geometry_type)
+
+```
 ## Installation
 
 ```bash

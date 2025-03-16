@@ -8,7 +8,7 @@ from xml.etree.ElementTree import Element
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.0.6.dev17"
+__version__ = "1.0.6.dev19"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -706,6 +706,8 @@ class Model(BaseNode):
 
 class Geometries(list):
     def get_geometry_by_name(self, geometry_name):
+        """Operates on the while kinematic chain of the device"""
+
         def iterate_geometries(collector):
             if hasattr(collector, "name"):
                 if collector.name == geometry_name:
@@ -727,6 +729,24 @@ class Geometries(list):
             return matched[0]
 
         return None
+
+    @staticmethod
+    def get_geometry_by_type(
+        root_geometry: Optional["pygdtf.Geometry"] = None,
+        geometry_class: Optional["pygdtf.Geometry"] = None,
+    ) -> List["pygdtf.Geometry"]:
+        """Recursively find all geometries of a given type. Requires a root geometry"""
+
+        def iterate_geometries(collector):
+            for g in collector.geometries:
+                if type(g) is geometry_class:
+                    matched.append(g)
+                if hasattr(g, "geometries"):
+                    iterate_geometries(g)
+
+        matched: List["pygdtf.Geometry"] = []
+        iterate_geometries(root_geometry)
+        return matched
 
 
 class Geometry(BaseNode):
@@ -1184,15 +1204,20 @@ class DmxChannels(list):
     using the by_breaks() method. The DmxMode class contains dmx_channels_count,
     virtual_channels_count, and dmx_breaks_count to have a quick access to these."""
 
-    def __init__(self, main_list=None, second_list=None):
-        super().__init__(main_list if main_list is not None else [])
-        self._second_list = second_list if second_list is not None else []
+    def __init__(self, main_list_of_objects=None, second_list_of_dicts=None):
+        super().__init__(
+            main_list_of_objects if main_list_of_objects is not None else []
+        )
+        self._second_list_of_dicts = (
+            second_list_of_dicts if second_list_of_dicts is not None else []
+        )
 
     def as_dicts(self):
+        """Returns previously pre-generated list of channels but as dictionaries"""
         # We could add better "to dict" conversion
         # to the DmxChannel and to all it's children.
         # At this point, we will keep using the .utils get_dmx_channels method
-        return DmxChannels(self._second_list)
+        return DmxChannels(self._second_list_of_dicts)
 
     def flattened(self):
         return [channel for break_channels in self for channel in break_channels]
@@ -1208,7 +1233,7 @@ class DmxChannels(list):
                 grouped[key] = []
             grouped[key].append(item)
 
-        return list(grouped.values())
+        return DmxChannels(grouped.values())
 
 
 class DmxModes(list):
@@ -1733,7 +1758,7 @@ class MacroVisualValue(BaseNode):
 
 
 class Revisions(list):
-    def revisions_sorted(self, reverse: bool = False):
+    def sorted(self, reverse: bool = False):
         return sorted(
             self,
             key=lambda revision: parse_date(revision.date),
