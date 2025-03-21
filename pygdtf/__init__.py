@@ -8,7 +8,7 @@ from xml.etree.ElementTree import Element
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.0.6.dev20"
+__version__ = "1.0.6.dev21"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -271,7 +271,7 @@ class FixtureType:
         else:
             self.dmx_modes = DmxModes()
 
-        if not self.dmx_modes:
+        if not len(self.dmx_modes):
             self.dmx_modes.append(DmxMode(name="Default"))
 
         # some files are broken and have no link to geometry from dmx mode
@@ -1275,15 +1275,15 @@ class DmxMode(BaseNode):
         if _dmx_channels is not None:
             self._dmx_channels = _dmx_channels
         else:
-            self._dmx_channels = []
+            self._dmx_channels = DmxChannels()
         if dmx_channels is not None:
             self.dmx_channels = dmx_channels
         else:
-            self.dmx_channels = []
+            self.dmx_channels = DmxChannels()
         if virtual_channels is not None:
             self.virtual_channels = virtual_channels
         else:
-            self.virtual_channels = []
+            self.virtual_channels = DmxChannels()
         self.dmx_channels_count = dmx_channels_count
         self.virtual_channels_count = virtual_channels_count
         self.dmx_breaks_count = dmx_breaks_count
