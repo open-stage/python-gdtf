@@ -16,7 +16,7 @@ maintainers = [
   {name = "vanous", email = "noreply@nodomain.com"},
 ]
 keywords = ["MVR", "GDTF"]
-license = {text = "MIT License"}
+license-files = ["LICENSE"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python"
@@ -24,7 +24,6 @@ classifiers = [
 
 [tool.setuptools]
 packages = ["pygdtf", "pygdtf.utils"]
-license-files = []
 
 [tool.setuptools.dynamic]
 version = {attr = "pygdtf.__version__"}
