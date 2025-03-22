@@ -32,15 +32,14 @@ Used for example by [BlenderDMX](https://github.com/open-stage/blender-dmx).
 
 ⚠️  List of DMX Channels provided by dmx\_mode.dmx\_channels is now a complete
 list of all DMX channels calculated by obtaining DMX channels for geometries,
-Geometry References and so on, no need to use the .utils methods.
+Geometry References and so on, no need to use the .utils methods anymore.
 
 ⚠️  The list of channels as dictionaries can be obtained by
 dmx\_mode.dmx\_channels.as\_dicts(), the "id" has been renamed to "attribute".
+DMX Channel now contains Logical Channels and then Channel Functions.
 
 ⚠️  Many of the .utils package methods have been moved directly to the main part
 of pygdtf. External usage of methods from .util should not be needed anymore.
-The previously provided get methods can be replaced by snippets like below,
-allowing greater customization and possible less future code breakage:
 
 #### .utils.get\_dmx\_modes\_info
 
@@ -60,19 +59,13 @@ for idx, mode in enumerate(gdtf_fixture.dmx_modes):
     modes_info.append(dmx_mode_info)
 ```
 
-#### .utils.get\_geometry\_by\_name
+#### Getting channels
 
-```python
-gdtf_fixture.geometries.get_geometry_by_name("geometry name")
-```
+- as channels, flattened: fixture.dmx\_modes[0].dmx\_channels
+- as channels, by breaks: fixture.dmx\_modes[0].dmx\_channels.by\_breaks()
+- as dicts, by breaks: fixture.dmx\_modes[0].dmx\_channels.as_dicts()
+- as dicts, flattened: fixture.dmx\_modes[0].dmx\_channels.as_dicts().flattened()
 
-#### .utils.get\_geometry\_by\_type
-
-```python
-#this is a static method and requires a root_geometry
-gdtf_fixture.geometries.get_geometry_by_type(geometry_root, geometry_type)
-
-```
 ## Installation
 
 ```bash
