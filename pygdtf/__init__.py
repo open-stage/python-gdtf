@@ -1237,6 +1237,14 @@ class DmxModes(list):
                 return mode
         return None
 
+    def as_dict(self):
+        all_modes = []
+        for idx, mode in enumerate(self):
+            mode_dict = mode.as_dict()
+            mode_dict["mode_id"] = idx
+            all_modes.append(mode_dict)
+        return DmxModes(all_modes)
+
 
 class DmxMode(BaseNode):
     def __init__(
@@ -1328,6 +1336,18 @@ class DmxMode(BaseNode):
             self.ft_macros = [
                 Macro(xml_node=i) for i in ftmacros_node.findall("FTMacro")
             ]
+
+    def as_dict(self):
+        return {
+            "name": self.name,
+            "description": self.description,
+            "geometry": self.geometry,
+            "dmx_channels": self.dmx_channels.as_dict(),
+            "dmx_channels_count": self.dmx_channels_count,
+            "dmx_breaks_count": self.dmx_breaks_count,
+            "virtual_channels": self.virtual_channels.as_dict(),
+            "virtual_channels_count": self.virtual_channels_count,
+        }
 
 
 class DmxChannel(BaseNode):
