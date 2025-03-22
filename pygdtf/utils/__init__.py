@@ -66,17 +66,16 @@ def _get_channels_for_geometry(
 
     for channel in _get_channels_by_geometry(name, dmx_channels):
         new_channel = None
-        if (
-            isinstance(geometry, pygdtf.GeometryReference)
-            and channel.dmx_break == "Overwrite"
-        ):
+        if isinstance(geometry, pygdtf.GeometryReference):
             new_channel = copy.deepcopy(channel)
-            if len(geometry.breaks):
-                new_channel.dmx_break = geometry.breaks[
-                    -1
-                ].dmx_break  # overwrite break is always the last one
-            else:
-                new_channel.dmx_break = 1
+            new_channel.geometry = geometry.name
+            if channel.dmx_break == "Overwrite":
+                if len(geometry.breaks):
+                    new_channel.dmx_break = geometry.breaks[
+                        -1
+                    ].dmx_break  # overwrite break is always the last one
+                else:
+                    new_channel.dmx_break = 1
 
         if channel.dmx_break == "Overwrite":
             # This only happens in an incorrect GDTF file
