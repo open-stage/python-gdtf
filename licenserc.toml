@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (C) 2023 vanous
+# Copyright (C) 2025 vanous
 #
 # This file is part of pygdtf.
 #
@@ -22,22 +22,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+headerPath = "mit-header.txt"
 
-def test_version(gdtf_fixture):
-    """GDTF version should be 1.2"""
+excludes = [
+    # Test files
+    ".github/",
+    "*.xml",
+]
 
-    assert gdtf_fixture.data_version == "1.2"
+[git]
+attrs = 'auto'
+ignore = 'auto'
 
+[properties]
+inceptionYear = 2020
+projectName = "pygdtf"
 
-def test_name(gdtf_fixture):
-    """Name of the fixture should be as defined"""
-
-    assert gdtf_fixture.name == "LED PAR 64 RGBW"
-
-
-def test_dmx_channel_count(gdtf_fixture, pygdtf_module):
-    """DMX mode name should be Default, channel count should be 5"""
-
-    for mode in gdtf_fixture.dmx_modes:
-        assert mode.name == "Default"
-        assert mode.dmx_channels_count == 5
