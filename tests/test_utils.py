@@ -16,22 +16,11 @@ def test_modes_channels_count(pygdtf_module):
             test_result = json.load(f)
         fixture = pygdtf_module.FixtureType(dsc_file=test_fixture_test_file)
 
-        modes_info = []
+        modes_info = fixture.dmx_modes.as_dict()
 
-        for idx, mode in enumerate(fixture.dmx_modes):
-            dmx_mode_info = {
-                "mode_id": idx,
-                "mode_name": mode.name,
-                "mode_dmx_channel_count": mode.dmx_channels_count,
-                "mode_virtual_channel_count": mode.virtual_channels_count,
-                "mode_dmx_breaks_count": mode.dmx_breaks_count,
-                "mode_dmx_channels": mode.dmx_channels.as_dict(),
-                "mode_virtual_channels": mode.virtual_channels.as_dict(),
-            }
-            modes_info.append(dmx_mode_info)
         # This is here to capture test data next time if needed
-        # with open(f"tests/{test_file}.json", "w") as f:
-        #    json.dump(modes_info, f)
+        with open(f"tests/{test_file}.json", "w") as f:
+            json.dump(modes_info, f)
         assert modes_info == test_result
 
 
