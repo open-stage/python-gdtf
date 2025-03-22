@@ -1206,7 +1206,7 @@ class Break(BaseNode):
 
 
 class DmxChannels(list):
-    def as_dicts(self):
+    def as_dict(self):
         """Returns channels as dicts"""
         return [item for dmx_channel in self for item in dmx_channel.as_dict()]
 
@@ -1313,7 +1313,7 @@ class DmxMode(BaseNode):
 
         self.dmx_channels = DmxChannels(flattened_channels)
         self.virtual_channels = DmxChannels(virtual_channels)
-        self.dmx_channels_count = len(self.dmx_channels.as_dicts())
+        self.dmx_channels_count = len(self.dmx_channels.as_dict())
         self.virtual_channels_count = len(self.virtual_channels)
         self.dmx_breaks_count = len(self.dmx_channels.by_breaks())
 
@@ -1406,7 +1406,7 @@ class DmxChannel(BaseNode):
 
         # calculate dmx_to in channel functions
         for logical_channel in self.logical_channels:
-            previous_dmx_from = None
+            previous_function_dmx_from = None
             for channel_function in sorted(
                 logical_channel.channel_functions,
                 key=lambda channel_function: channel_function.dmx_from.value,
@@ -1417,20 +1417,43 @@ class DmxChannel(BaseNode):
                 else:
                     byte_count = len(self.offset)
 
-                if previous_dmx_from is None:
+                if previous_function_dmx_from is None:
                     # set max value
                     channel_function.dmx_to = DmxValue("0/1")
                     channel_function.dmx_to.value = (1 << (byte_count * 8)) - 1
                     channel_function.dmx_to.byte_count = byte_count
-                    previous_dmx_from = channel_function.dmx_from
+                    previous_function_dmx_from = channel_function.dmx_from
                     if channel_function.dmx_from.value == 0:
                         # reset in case of mode masters
-                        previous_dmx_from = None
+                        previous_function_dmx_from = None
                 else:
                     # set value of the previous dmx_from -1
-                    channel_function.dmx_to = copy.deepcopy(previous_dmx_from)
+                    channel_function.dmx_to = copy.deepcopy(previous_function_dmx_from)
                     channel_function.dmx_to.value -= 1
-                    previous_dmx_from = channel_function.dmx_from
+                    previous_function_dmx_from = channel_function.dmx_from
+
+                previous_set_dmx_from = None
+                for channel_set in sorted(
+                    channel_function.channel_sets,
+                    key=lambda channel_set: channel_set.dmx_from.value,
+                    reverse=True,
+                ):
+                    if self.offset is None:
+                        byte_count = channel_set.dmx_from.byte_count
+                    else:
+                        byte_count = len(self.offset)
+
+                    if previous_set_dmx_from is None:
+                        # set max value
+                        channel_set.dmx_to = DmxValue("0/1")
+                        channel_set.dmx_to.value = (1 << (byte_count * 8)) - 1
+                        channel_set.dmx_to.byte_count = byte_count
+                        previous_set_dmx_from = channel_set.dmx_from
+                    else:
+                        # set value of the previous dmx_from -1
+                        channel_set.dmx_to = copy.deepcopy(previous_set_dmx_from)
+                        channel_set.dmx_to.value -= 1
+                        previous_set_dmx_from = channel_set.dmx_from
 
     def __str__(self):
         return f"{self.name} ({self.offset})"
@@ -1625,6 +1648,7 @@ class ChannelSet(BaseNode):
         self,
         name: Optional[str] = None,
         dmx_from: "DmxValue" = DmxValue("0/1"),
+        dmx_to: "DmxValue" = DmxValue("0/1"),
         physical_from: float = 0,
         physical_to: float = 1,
         wheel_slot_index: int = 1,
@@ -1633,6 +1657,7 @@ class ChannelSet(BaseNode):
     ):
         self.name = name
         self.dmx_from = dmx_from
+        self.dmx_to = dmx_to
         self.physical_from = physical_from
         self.physical_to = physical_to
         self.wheel_slot_index = wheel_slot_index
@@ -1641,6 +1666,9 @@ class ChannelSet(BaseNode):
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.name = xml_node.attrib.get("Name")
         self.dmx_from = DmxValue(xml_node.attrib.get("DMXFrom", "0/1"))
+        _dmx_from = copy.deepcopy(self.dmx_from)
+        _dmx_from.value += 1
+        self.dmx_to = _dmx_from
         self.physical_from = float(xml_node.attrib.get("PhysicalFrom", 0))
         self.physical_to = float(xml_node.attrib.get("PhysicalTo", 1))
         self.wheel_slot_index = int(xml_node.attrib.get("WheelSlotIndex", 1))
@@ -1649,6 +1677,7 @@ class ChannelSet(BaseNode):
         return {
             "name": self.name,
             "dmx_from": self.dmx_from.get_value(),
+            "dmx_to": self.dmx_to.get_value(),
             "physical_from": self.physical_from,
             "physical_to": self.physical_to,
             "wheel_slot_index": self.wheel_slot_index,

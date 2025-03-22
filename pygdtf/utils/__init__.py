@@ -361,7 +361,7 @@ def calculate_complexity(gdtf_profile: Optional["pygdtf.FixtureType"] = None):
             geometry_trees_count += 1
             geometries.append(mode.geometry)
 
-        flattened_channels = mode.dmx_channels.as_dicts()
+        flattened_channels = mode.dmx_channels.as_dict()
 
         dmx_channels_count += mode.dmx_channels_count
         virtual_channels_count += mode.virtual_channels_count

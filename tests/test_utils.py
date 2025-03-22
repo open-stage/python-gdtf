@@ -25,8 +25,8 @@ def test_modes_channels_count(pygdtf_module):
                 "mode_dmx_channel_count": mode.dmx_channels_count,
                 "mode_virtual_channel_count": mode.virtual_channels_count,
                 "mode_dmx_breaks_count": mode.dmx_breaks_count,
-                "mode_dmx_channels": mode.dmx_channels.as_dicts(),
-                "mode_virtual_channels": mode.virtual_channels.as_dicts(),
+                "mode_dmx_channels": mode.dmx_channels.as_dict(),
+                "mode_virtual_channels": mode.virtual_channels.as_dict(),
             }
             modes_info.append(dmx_mode_info)
         # This is here to capture test data next time if needed
