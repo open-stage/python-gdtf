@@ -14,9 +14,5 @@ def test_dmx_channel_count(gdtf_fixture, pygdtf_module):
     """DMX mode name should be Default, channel count should be 5"""
 
     for mode in gdtf_fixture.dmx_modes:
-        dmx_channels = pygdtf_module.utils.get_dmx_channels(gdtf_fixture, mode.name)
-        dmx_channels_flattened = [
-            channel for break_channels in dmx_channels for channel in break_channels
-        ]
         assert mode.name == "Default"
-        assert len(dmx_channels_flattened) == 5
+        assert mode.dmx_channels_count == 5

@@ -8,7 +8,7 @@ from xml.etree.ElementTree import Element
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.0.6.dev21"
+__version__ = "1.0.6.dev25"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -1296,7 +1296,10 @@ class DmxMode(BaseNode):
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.name = xml_node.attrib.get("Name")
         self.description = xml_node.attrib.get("Description", "")
-        self.geometry = xml_node.attrib.get("Geometry")
+        self.description = self.description.replace(
+            "StringConv Failed", ""
+        )  # many GDTF files show this issue
+        self.geometry = xml_node.attrib.get("Geometry", None)
 
         dmx_channels_collect = xml_node.find("DMXChannels")
         if dmx_channels_collect is not None:
@@ -1368,6 +1371,7 @@ class DmxChannel(BaseNode):
         self.dmx_break = dmx_break
         self.offset = offset
         self.default = default
+        self.attribute = attribute
         self.highlight = highlight
         self.initial_function = initial_function
         self.geometry = geometry
@@ -1404,6 +1408,10 @@ class DmxChannel(BaseNode):
         self.logical_channels = [
             LogicalChannel(xml_node=i) for i in xml_node.findall("LogicalChannel")
         ] or [LogicalChannel(attribute=NodeLink("Attributes", "NoFeature"))]
+
+        self.attribute = self.logical_channels[
+            0
+        ].attribute  # set this as default, later parsing might overwrite it but if not, incomplete or old GDTF files will work correctly
 
         # get default value
 
@@ -1509,6 +1517,8 @@ class DmxChannel(BaseNode):
                         "dmx": offset_value,
                         "offset": self.offset,
                         "attribute": "+" * idx + self.attribute.str_link,
+                        "geometry": self.geometry,
+                        "default": self.default.get_value(fine=True),
                     }
                 )
         return dicts_list

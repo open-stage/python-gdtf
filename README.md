@@ -36,35 +36,11 @@ Geometry References and so on, no need to use the .utils methods anymore.
 
 ⚠️  The list of channels as dictionaries can be obtained by
 dmx\_mode.dmx\_channels.as\_dicts(), the "id" has been renamed to "attribute".
-DMX Channel now contains Logical Channels and then Channel Functions.
+DMX Channel now contains Logical Channels and then Channel Functions. The
+as\_dict() is now also in dmx\_modes, dmx\_mode, dmx\_channels and so on.
 
 ⚠️  Many of the .utils package methods have been moved directly to the main part
-of pygdtf. External usage of methods from .util should not be needed anymore.
-
-#### .utils.get\_dmx\_modes\_info
-
-```python
-modes_info = []
-
-for idx, mode in enumerate(gdtf_fixture.dmx_modes):
-    dmx_mode_info = {
-        "mode_id": idx,
-        "mode_name": mode.name,
-        "mode_dmx_channel_count": mode.dmx_channels_count,
-        "mode_virtual_channel_count": mode.virtual_channels_count,
-        "mode_dmx_breaks_count": mode.dmx_breaks_count,
-        "mode_dmx_channels": mode.dmx_channels.as_dicts(),
-        "mode_virtual_channels": mode.virtual_channels.as_dicts(),
-    }
-    modes_info.append(dmx_mode_info)
-```
-
-#### Getting channels
-
-- as channels, flattened: fixture.dmx\_modes[0].dmx\_channels
-- as channels, by breaks: fixture.dmx\_modes[0].dmx\_channels.by\_breaks()
-- as dicts, by breaks: fixture.dmx\_modes[0].dmx\_channels.as_dicts()
-- as dicts, flattened: fixture.dmx\_modes[0].dmx\_channels.as_dicts().flattened()
+of pygdtf. External usage of methods from .utils should not be needed anymore.
 
 ## Installation
 
