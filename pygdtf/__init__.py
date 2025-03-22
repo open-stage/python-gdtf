@@ -8,7 +8,7 @@ from xml.etree.ElementTree import Element
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.0.6.dev25"
+__version__ = "1.0.6.dev26"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -1324,9 +1324,22 @@ class DmxMode(BaseNode):
 
         self.dmx_channels = DmxChannels(flattened_channels)
         self.virtual_channels = DmxChannels(virtual_channels)
-        self.dmx_channels_count = len(self.dmx_channels.as_dict())
+
+        _channel_count_total = 0
+        for dmx_break in self.dmx_channels.by_breaks():
+            _channel_count_total += max(
+                offset
+                for channel in dmx_break
+                if channel.offset is not None
+                for offset in channel.offset
+            )
+
+        self.dmx_channels_count = _channel_count_total
         self.virtual_channels_count = len(self.virtual_channels)
-        self.dmx_breaks_count = len(self.dmx_channels.by_breaks())
+
+        self.dmx_breaks_count = len(
+            {channel.dmx_break for channel in self.dmx_channels}
+        )
 
         relations_node = xml_node.find("Relations")
         if relations_node is not None:

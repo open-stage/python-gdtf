@@ -17,6 +17,9 @@ def test_modes_channels_count(pygdtf_module):
         fixture = pygdtf_module.FixtureType(dsc_file=test_fixture_test_file)
 
         modes_info = fixture.dmx_modes.as_dict()
+        print("fixture", fixture.name)
+        for mode in modes_info:
+            print(mode["name"], mode["dmx_channels_count"])
 
         # This is here to capture test data next time if needed
         with open(f"tests/{test_file}.json", "w") as f:
