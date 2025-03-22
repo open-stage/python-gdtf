@@ -1206,31 +1206,18 @@ class Break(BaseNode):
 
 
 class DmxChannels(list):
-    """By default, we return a single list of channels. These might have different
-    dmx_breaks. One can get a list of lists of channels grouped by the dmx_break by
-    using the by_breaks() method. The DmxMode class contains dmx_channels_count,
-    virtual_channels_count, and dmx_breaks_count to have a quick access to these."""
-
-    def __init__(self, main_list_of_objects=None, second_list_of_dicts=None):
-        super().__init__(
-            main_list_of_objects if main_list_of_objects is not None else []
-        )
-        self._second_list_of_dicts = (
-            second_list_of_dicts if second_list_of_dicts is not None else []
-        )
-
     def as_dicts(self):
-        """Returns previously pre-generated list of channels but as dictionaries"""
-        # We could add better "to dict" conversion
-        # to the DmxChannel and to all it's children.
-        # At this point, we will keep using the .utils get_dmx_channels method
-        return DmxChannels(self._second_list_of_dicts)
+        """Returns channels as dicts"""
+        return [item for dmx_channel in self for item in dmx_channel.as_dict()]
 
     def flattened(self):
-        return [channel for break_channels in self for channel in break_channels]
+        # use on list by breaks
+        return DmxChannels(
+            [channel for break_channels in self for channel in break_channels]
+        )
 
     def by_breaks(self):
-        # this is to unflatten the lists again
+        # this is to unflatten the list
         grouped = {}
 
         for item in self:
@@ -1310,23 +1297,8 @@ class DmxMode(BaseNode):
                 for i in dmx_channels_collect.findall("DMXChannel")
             ]
 
-        dmx_channels_dicts = get_dmx_channels(
-            gdtf_profile=self.fixture_type,
-            include_channel_functions=True,
-            as_dicts=True,
-            dmx_mode=self,
-        )
-
-        virtual_channels_dicts = get_virtual_channels(
-            gdtf_profile=self.fixture_type,
-            include_channel_functions=True,
-            as_dicts=True,
-            dmx_mode=self,
-        )
         dmx_channels = get_dmx_channels(
             gdtf_profile=self.fixture_type,
-            include_channel_functions=True,
-            as_dicts=False,
             dmx_mode=self,
         )
 
@@ -1336,16 +1308,14 @@ class DmxMode(BaseNode):
 
         virtual_channels = get_virtual_channels(
             gdtf_profile=self.fixture_type,
-            include_channel_functions=True,
-            as_dicts=False,
             dmx_mode=self,
         )
 
-        self.dmx_channels = DmxChannels(flattened_channels, dmx_channels_dicts)
-        self.virtual_channels = DmxChannels(virtual_channels, virtual_channels_dicts)
-        self.dmx_channels_count = len(self.dmx_channels.as_dicts().flattened())
+        self.dmx_channels = DmxChannels(flattened_channels)
+        self.virtual_channels = DmxChannels(virtual_channels)
+        self.dmx_channels_count = len(self.dmx_channels.as_dicts())
         self.virtual_channels_count = len(self.virtual_channels)
-        self.dmx_breaks_count = len(self.dmx_channels.as_dicts())
+        self.dmx_breaks_count = len(self.dmx_channels.by_breaks())
 
         relations_node = xml_node.find("Relations")
         if relations_node is not None:
@@ -1366,6 +1336,7 @@ class DmxChannel(BaseNode):
         dmx_break: Union[int, str] = 1,
         offset: Optional[List[int]] = None,
         default: "DmxValue" = DmxValue("0/1"),
+        attribute: Optional["NodeLink"] = None,
         highlight: Optional["DmxValue"] = None,
         initial_function: Optional["NodeLink"] = None,
         geometry: Optional[str] = None,
@@ -1431,6 +1402,7 @@ class DmxChannel(BaseNode):
                     )
                     if channel_function_name == str(self.initial_function):
                         self.default = channel_function.default
+                        self.attribute = logical_channel.attribute
 
         # calculate dmx_to in channel functions
         for logical_channel in self.logical_channels:
@@ -1465,6 +1437,38 @@ class DmxChannel(BaseNode):
 
     def __repr__(self):
         return f"{self.name} ({self.offset})"
+
+    def as_dict(self):
+        dicts_list = []
+        for idx, offset_value in enumerate(self.offset or [0]):
+            # offset_value 0 means this is virtual channel
+            if idx == 0:  # coarse
+                dicts_list.append(
+                    {
+                        "dmx": offset_value,
+                        "offset": self.offset,
+                        "attribute": self.attribute.str_link,
+                        "default": self.default.get_value(),
+                        "highlight": self.highlight.get_value()
+                        if self.highlight is not None
+                        else None,
+                        "geometry": self.geometry,
+                        "break": self.dmx_break,
+                        "logical_channels": [
+                            logical_channel.as_dict()
+                            for logical_channel in self.logical_channels
+                        ],
+                    }
+                )
+            else:
+                dicts_list.append(
+                    {
+                        "dmx": offset_value,
+                        "offset": self.offset,
+                        "attribute": "+" * idx + self.attribute.str_link,
+                    }
+                )
+        return dicts_list
 
 
 class LogicalChannel(BaseNode):
@@ -1514,6 +1518,15 @@ class LogicalChannel(BaseNode):
 
     def __repr__(self):
         return f"{self.attribute.str_link}"
+
+    def as_dict(self):
+        return {
+            "attribute": self.attribute.str_link,
+            "channel_functions": [
+                channel_function.as_dict()
+                for channel_function in self.channel_functions
+            ],
+        }
 
 
 class ChannelFunction(BaseNode):
@@ -1591,6 +1604,21 @@ class ChannelFunction(BaseNode):
     def __repr__(self):
         return f"Name: {self.name}, Link: {self.attribute}, DMX From: {self.dmx_from}, DMX To: {self.dmx_to}"
 
+    def as_dict(self):
+        return {
+            "name": self.name,
+            "attribute": self.attribute.str_link,
+            "dmx_from": self.dmx_from.get_value(),
+            "dmx_to": self.dmx_to.get_value(),
+            "default": self.default.get_value(),
+            "real_fade": self.real_fade,
+            "physical_to": self.physical_to,
+            "physical_from": self.physical_from,
+            "channel_sets": [
+                channel_set.as_dict() for channel_set in self.channel_sets
+            ],
+        }
+
 
 class ChannelSet(BaseNode):
     def __init__(
@@ -1616,6 +1644,15 @@ class ChannelSet(BaseNode):
         self.physical_from = float(xml_node.attrib.get("PhysicalFrom", 0))
         self.physical_to = float(xml_node.attrib.get("PhysicalTo", 1))
         self.wheel_slot_index = int(xml_node.attrib.get("WheelSlotIndex", 1))
+
+    def as_dict(self):
+        return {
+            "name": self.name,
+            "dmx_from": self.dmx_from.get_value(),
+            "physical_from": self.physical_from,
+            "physical_to": self.physical_to,
+            "wheel_slot_index": self.wheel_slot_index,
+        }
 
 
 class Relation(BaseNode):
