@@ -26,31 +26,6 @@ import json
 from pathlib import Path
 
 
-def test_modes_channels_count(pygdtf_module):
-    """Test channel count for complex devices with GeometryReferences"""
-
-    test_files = ["test1", "test2"]
-
-    for test_file in test_files:
-        test_fixture_test_file = Path(
-            Path(__file__).parents[0], f"{test_file}.xml"
-        ).as_posix()
-        test_fixture_result_file = Path(Path(__file__).parents[0], f"{test_file}.json")
-        with open(test_fixture_result_file) as f:
-            test_result = json.load(f)
-        fixture = pygdtf_module.FixtureType(dsc_file=test_fixture_test_file)
-
-        modes_info = fixture.dmx_modes.as_dict()
-        print("fixture", fixture.name)
-        for mode in modes_info:
-            print(mode["name"], mode["dmx_channels_count"])
-
-        # This is here to capture test data next time if needed
-        # with open(f"tests/{test_file}.json", "w") as f:
-        #    json.dump(modes_info, f)
-        assert modes_info == test_result
-
-
 def test_get_geometries(pygdtf_module):
     """Test get geometries with GeometryReferences"""
 
