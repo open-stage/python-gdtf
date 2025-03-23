@@ -1,47 +1,27 @@
 ## Releasing to pypi
 
 * update CHANGELOG.md
-* increment version in setup.py
+* increment version in `__init__.py`
 * push to master (via PR)
 * `git tag versionCode`
 * `git push origin versionCode`
 
-* generate wheel with pip wheel:
-
-```bash
-python -m pip install pip wheel twine
-python3 -m pip wheel .
-```
-
-* generate wheel with uv:
+* Use uv for build and upload:
     - https://docs.astral.sh/uv/
 
 ```bash
 uv build
 ```
-
-* test upload to TestPypi with twine:
 * use `__token__` for username and a token for password
 
-```bash
-python -m twine upload --repository testpypi ./pygdtf*whl --verbose
-```
-
-* test upload to TestPypi with uv:
-* use token for -t
-
-``bash
-uv publish -t --publish-url https://test.pypi.org/legacy/ dist/*whl
-```
-
-* release to official pypi with twine:
+* Test upload to Test pypi with uv:
 
 ```bash
-python -m twine upload ./pygdtf*whl
+uv publish --publish-url https://test.pypi.org/legacy/ dist/*whl
 ```
 
-* release to official pypi with uv:
+* Release to Official pypi with uv:
 
 ```bash
-uv publish -t --publish-url https://upload.pypi.org/legacy/ dist/*whl
+uv publish --publish-url https://upload.pypi.org/legacy/ dist/*whl
 ```

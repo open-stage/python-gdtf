@@ -2,46 +2,85 @@
 
 #### Version 1.1.0
 
-Big sweeping changes to make the library to return proper structures by default
-without having to use the .utils package:
+Big changes to make the library to return proper structures by default without
+having to use the .utils package. See more details below.
 
-    * Generally, the .utils should not be needed and should not be used
-      anymore, most methods have been moved as class methods of the main
-      parser.
+##### New additions:
 
-    * ⚠️  List of DMX Channels provided by dmx\_mode.dmx\_channels is now a
-      complete list of all DMX channels calculated by obtaining DMX channels
-      for geometries, Geometry References and so on, no need to use the .utils
-      methods.
+* Context manager:
 
-    * ⚠️  The list of channels as dictionaries can be obtained by
-      dmx\_mode.dmx\_channels.as\_dicts(), the "id" has been renamed to
-      "attribute".
+    * The FixtureType can now also be used as a context manager.
 
-    * ⚠️  Many of the .utils package methods have been moved directly to the
-      main part of pygdtf. External usage of methods from .util should not be
-      needed anymore.  The previously provided get methods can be replaced by
-      snippets like below, allowing greater customization and possible less
-      future code breakage.
+    ```python
+    with pygdtf.FixtureType("fixture.gdtf") as gdtf_fixture:
+        print(gdtf_fixture.name)
+    ````
 
-    * Migration steps:
+    The original behavior is still possible:
+
+    ```python
+    gdtf_fixture = pygdtf.FixtureType("/tmp/spiider.gdtf")
+    print(gdtf_fixture.name)
+    # make sure to close the zip file which got open...
+    gdtf_fixture._package.close()
+    ```
+
+* Calculating DMX To in Channel Functions and Channel Sets
+
+    * ChannelFunctions and ChannelSets in GDTF files only provide DMX From, to
+      ensure that user created data does not have gaps/overlaps. Pygdtf now
+      calculates the DMX To values for convenience.
+
+* DMX Channel default and attribute fields
+
+    * DMX Channel still has `default` field in pygdtf, which has been
+      deprecated in GDTF 1.2 by a link to the Initial Channel Function and a
+      default value there.  The `default` field in DMX Channel is THE default
+      value as provided by the Initial Channel Function, for convenience.
+
+    * Same with the `attribute` field, which for convenience is provided from
+      the first Logical Channel.
+
+* Output data as dict
+
+    * DMX Modes, Channels, Logical Channels, Channel Functions, Channel Sets
+      now have as\_dict method to provide dictionary based output to interop
+      with javascript and so on. The as\_dict methods are not 100% complete,
+      more fields are to be added over time.
+
+* LogicalChannels in dictionary structure
+
+    * Previous .utils methods skipped LogicalChannels completely, these are now added.
+
+##### Big compatibility changes:
+
+* Generally, the .utils should not be needed and should not be used anymore
+  (with some exceptions), most methods have been moved as class methods of the
+  main parser.
+
+* ⚠️  List of DMX Channels provided by dmx\_mode.dmx\_channels is now a
+  complete list of all DMX channels calculated by obtaining DMX channels
+  for geometries, Geometry References and so on, no need to use the .utils
+  methods anymore.
+
+* ⚠️  The list of channels as dictionaries can be obtained by
+  dmx\_mode.dmx\_channels.as\_dict(), the "id" has been renamed to
+  "attribute".  DMX Channel now contains Logical Channels and then Channel
+  Functions. The as\_dict() is now also in dmx\_modes, dmx\_mode,
+  dmx\_channels and so on.
+
+* ⚠️  Many of the .utils package methods have been moved directly to the
+  main part of pygdtf. External usage of methods from .utils should not be
+  needed anymore.
+
+* Migration steps, instead of the .utils methods, use the default parser
+  provided methods:
 
 ##### .utils.get\_dmx\_modes\_info
 
 ```python
-modes_info = []
+modes_info = gdtf_fixture.dmx_modes.as_dict()
 
-for idx, mode in enumerate(gdtf_fixture.dmx_modes):
-    dmx_mode_info = {
-        "mode_id": idx,
-        "mode_name": mode.name,
-        "mode_dmx_channel_count": mode.dmx_channels_count,
-        "mode_virtual_channel_count": mode.virtual_channels_count,
-        "mode_dmx_breaks_count": mode.dmx_breaks_count,
-        "mode_dmx_channels": mode.dmx_channels.as_dicts(),
-        "mode_virtual_channels": mode.virtual_channels.as_dicts(),
-    }
-    modes_info.append(dmx_mode_info)
 ```
 
 ##### .utils.get\_geometry\_by\_name
@@ -55,7 +94,7 @@ gdtf_fixture.geometries.get_geometry_by_name("geometry name")
 ```python
 #this is a static method and requires a root_geometry
 gdtf_fixture.geometries.get_geometry_by_type(geometry_root, geometry_type)
-
+```
 
 #### Version 1.0.5
 
@@ -69,7 +108,7 @@ gdtf_fixture.geometries.get_geometry_by_type(geometry_root, geometry_type)
     * Link geometry to DMX Mode geometry if link is missing
     * Add Default DMX Mode if missing
     * Add default LogicalChannel and ChannelFunction if missing
-    * Convert some RDM codes to int, fix name 
+    * Convert some RDM codes to int, fix name
     * Improve Revision date parsing, return as multiple types
     * Change conditionals due to changes in xml.etree (removing the walrus operator)
     * Fix 3DS CRC and extension detection
@@ -112,7 +151,7 @@ gdtf_fixture.geometries.get_geometry_by_type(geometry_root, geometry_type)
     * DataVersion, MediaServerCamera, Inventory
     * Wiring Object, DMX Break Overwrite, Geometry Reference
     * MediaServerLayer, MediaServerMaster
-* Many additional improvements and fixes 
+* Many additional improvements and fixes
     * more type hints
     * default values to ColorCIE
     * handle missing data (thumbnails, models)
