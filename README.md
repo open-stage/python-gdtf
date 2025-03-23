@@ -42,6 +42,8 @@ as\_dict() is now also in dmx\_modes, dmx\_mode, dmx\_channels and so on.
 ⚠️  Many of the .utils package methods have been moved directly to the main part
 of pygdtf. External usage of methods from .utils should not be needed anymore.
 
+See [CHANGELOG](CHANGELOG.md) for details.
+
 ## Installation
 
 ```bash
@@ -88,7 +90,7 @@ gdtf_fixture.dmx_modes[0].dmx_breaks_count
 0x7f789c375590>, <pygdtf.DmxChannel object at 0x7f789c375a90>,...
 
 # get DMX channels as dict
-gdtf_fixture.dmx_modes[0].dmx_channels.as_dicts()
+gdtf_fixture.dmx_modes[0].dmx_channels.as_dict()
 
 [[{'dmx': 1, 'offset': [1, 2], 'id': 'Pan', 'default': 128, 'highlight': None,
 'geometry': 'Yoke', 'break': 1, 'parent_name': 'Base', 'channel_functions':
