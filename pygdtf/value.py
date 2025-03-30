@@ -322,3 +322,22 @@ class NodeLink:
 
 
 ColorSpaceDefinition = namedtuple("ColorSpaceDefinition", "r g b w")
+
+
+class DmxModeBreak:
+    def __init__(self, dmx_break, channels_count):
+        if dmx_break is None or channels_count is None:
+            self.dmx_break = 0
+            self.channels_count = 0
+        else:
+            self.dmx_break = dmx_break
+            self.channels_count = channels_count
+
+    def __str__(self):
+        return f"Break: {self.dmx_break}, Channels count: {self.channels_count}"
+
+    def __repr__(self):
+        return f"Break: {self.dmx_break}, Channels count: {self.channels_count}"
+
+    def as_dict(self):
+        return {"dmx_break": self.dmx_break, "channels_count": self.channels_count}

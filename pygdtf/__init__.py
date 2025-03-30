@@ -25,14 +25,14 @@
 import datetime
 import zipfile
 from enum import Enum as pyEnum
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -310,7 +310,7 @@ class FixtureType:
                 [Revision(xml_node=i) for i in revision_collect.findall("Revision")]
             )
         else:
-            self.revisions = []
+            self.revisions = Revisions()
 
         self.protocols = []
         protocols_collect = self._root.find("Protocols")
@@ -1240,7 +1240,7 @@ class DmxChannels(list):
             [channel for break_channels in self for channel in break_channels]
         )
 
-    def by_breaks(self):
+    def by_breaks(self, as_dict=False):
         # this is to unflatten the list
         grouped = {}
 
@@ -1249,7 +1249,10 @@ class DmxChannels(list):
 
             if key not in grouped:
                 grouped[key] = []
-            grouped[key].append(item)
+            if as_dict:
+                grouped[key] += item.as_dict()
+            else:
+                grouped[key].append(item)
 
         return DmxChannels(grouped.values())
 
@@ -1279,7 +1282,7 @@ class DmxMode(BaseNode):
         _dmx_channels: Optional[List["DmxChannel"]] = None,
         dmx_channels: Optional[List] = None,
         dmx_channels_count: int = 0,
-        dmx_breaks_count: int = 0,
+        dmx_breaks: Optional[List["DmxModeBreak"]] = None,
         virtual_channels: Optional[List] = None,
         virtual_channels_count: int = 0,
         relations: Optional[List["Relation"]] = None,
@@ -1299,17 +1302,25 @@ class DmxMode(BaseNode):
             self.dmx_channels = dmx_channels
         else:
             self.dmx_channels = DmxChannels()
+
         if virtual_channels is not None:
             self.virtual_channels = virtual_channels
         else:
             self.virtual_channels = DmxChannels()
+
         self.dmx_channels_count = dmx_channels_count
         self.virtual_channels_count = virtual_channels_count
-        self.dmx_breaks_count = dmx_breaks_count
+
+        if dmx_breaks is not None:
+            self.dmx_breaks = dmx_breaks
+        else:
+            self.dmx_breaks = []
+
         if relations is not None:
             self.relations = relations
         else:
             self.relations = []
+
         if ft_macros is not None:
             self.ft_macros = ft_macros
         else:
@@ -1349,21 +1360,25 @@ class DmxMode(BaseNode):
         self.dmx_channels = DmxChannels(flattened_channels)
         self.virtual_channels = DmxChannels(virtual_channels)
 
-        _channel_count_total = 0
-        for dmx_break in self.dmx_channels.by_breaks():
-            _channel_count_total += max(
-                offset
-                for channel in dmx_break
-                if channel.offset is not None
-                for offset in channel.offset
-            )
+        grouped_breaks: Dict[int, List[int]] = {}
+        for channel in self.dmx_channels:
+            key = channel.dmx_break
+            if key not in grouped_breaks:
+                grouped_breaks[key] = []
 
-        self.dmx_channels_count = _channel_count_total
-        self.virtual_channels_count = len(self.virtual_channels)
+            if channel.offset is not None:
+                grouped_breaks[key] += channel.offset
 
-        self.dmx_breaks_count = len(
-            {channel.dmx_break for channel in self.dmx_channels}
+        self.dmx_breaks = [
+            DmxModeBreak(dmx_break, len(set(channel_offsets)))
+            for dmx_break, channel_offsets in grouped_breaks.items()
+        ]
+
+        self.dmx_channels_count = sum(
+            dmx_break.channels_count for dmx_break in self.dmx_breaks
         )
+
+        self.virtual_channels_count = len(self.virtual_channels)
 
         relations_node = xml_node.find("Relations")
         if relations_node is not None:
@@ -1384,7 +1399,7 @@ class DmxMode(BaseNode):
             "geometry": self.geometry,
             "dmx_channels": self.dmx_channels.as_dict(),
             "dmx_channels_count": self.dmx_channels_count,
-            "dmx_breaks_count": self.dmx_breaks_count,
+            "dmx_breaks": [dmx_break.as_dict() for dmx_break in self.dmx_breaks],
             "virtual_channels": self.virtual_channels.as_dict(),
             "virtual_channels_count": self.virtual_channels_count,
         }
@@ -1397,6 +1412,8 @@ class DmxChannel(BaseNode):
         offset: Optional[List[int]] = None,
         default: "DmxValue" = DmxValue("0/1"),
         attribute: Optional["NodeLink"] = None,
+        # ^^^ this is technically not correct but it's a shortcut to an attribute
+        # of the LogicalChannel of the Initial function
         highlight: Optional["DmxValue"] = None,
         initial_function: Optional["NodeLink"] = None,
         geometry: Optional[str] = None,
@@ -1898,12 +1915,16 @@ class MacroVisualValue(BaseNode):
 
 
 class Revisions(list):
-    def sorted(self, reverse: bool = False):
+    def sorted(self, reverse: bool = True):
+        # reverse True: first item is the latest
         return sorted(
             self,
             key=lambda revision: parse_date(revision.date),
             reverse=reverse,
         )
+
+    def as_dict(self, reverse: bool = True):
+        return [revision.as_dict() for revision in self.sorted(reverse=reverse)]
 
 
 class Revision(BaseNode):
@@ -1944,6 +1965,9 @@ class Revision(BaseNode):
 
     def __repr__(self):
         return f"{self.text} {self.date}"
+
+    def as_dict(self):
+        return {"text": self.text, "date": self.date, "user_id": self.user_id}
 
 
 class Properties(BaseNode):
