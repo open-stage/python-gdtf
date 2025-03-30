@@ -56,12 +56,12 @@ def test_modes_info_as_dict(pygdtf_module):
             Path(__file__).parents[0], f"{test_file}.xml"
         ).as_posix()
         test_fixture_result_file = Path(Path(__file__).parents[0], f"{test_file}.json")
-        with open(test_fixture_result_file) as f:
-            test_result = json.load(f)
+
         fixture = pygdtf_module.FixtureType(dsc_file=test_fixture_test_file)
 
         modes_info = fixture.dmx_modes.as_dict()
         print("fixture", fixture.name)
+
         for mode in modes_info:
             print(mode["name"], mode["dmx_channels_count"])
 
@@ -69,13 +69,16 @@ def test_modes_info_as_dict(pygdtf_module):
         # with open(f"tests/{test_file}.json", "w") as f:
         #    json.dump(modes_info, f)
 
+        with open(test_fixture_result_file) as f:
+            test_result = json.load(f)
+
         # dmx mode
 
         for item in [
             "name",
             "dmx_channels_count",
             "virtual_channels_count",
-            "dmx_breaks_count",
+            "dmx_breaks",
         ]:
             assert modes_info[0][item] == test_result[0][item]
 

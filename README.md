@@ -28,7 +28,7 @@ Used for example by [BlenderDMX](https://github.com/open-stage/blender-dmx).
 
 ## Important changes
 
-### Version 1.1.0
+### Version 1.1.0 and 1.2.0
 
 ⚠️  List of DMX Channels provided by dmx\_mode.dmx\_channels is now a complete
 list of all DMX channels calculated by obtaining DMX channels for geometries,
@@ -73,7 +73,7 @@ gdtf_fixture = pygdtf.FixtureType(dsc_file="description.xml")
 gdtf_fixture.dmx_modes[0].name
 'Mode 1 - Standard 16 - bit'
 
-# get number of DMX channels
+# get total number of DMX channels
 gdtf_fixture.dmx_modes[0].dmx_channels_count
 39
 
@@ -81,9 +81,12 @@ gdtf_fixture.dmx_modes[0].dmx_channels_count
 gdtf_fixture.dmx_modes[0].virtual_channels_count
 0
 
-# get number of DMX breaks
-gdtf_fixture.dmx_modes[0].dmx_breaks_count
+# get DMX breaks and DMX channels count:
+gdtf_fixture.dmx_modes[0].dmx_breaks[0].dmx_break
 1
+
+gdtf_fixture.dmx_modes[0].dmx_breaks[0].channels_count
+39
 
 # get DMX channels as objects gdtf_fixture.dmx_modes[0].dmx_channels
 <pygdtf.DmxChannel object at 0x7f789c63bb60>, <pygdtf.DmxChannel object at

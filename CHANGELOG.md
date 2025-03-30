@@ -1,5 +1,19 @@
 ### Changelog
 
+#### Version 1.2.0
+
+Adjustments to the previous re-work, affecting the following:
+
+- Revisions:
+    - fixture\_type.revisions now returns Revisions()
+    - added method as\_dict
+    - sorted is now reversed by default
+- DmxMode:
+    - dmx\_breaks\_count has been replaced by dmx\_breaks which contains channel
+      count and the break value
+- DmxChannels:
+    - added as\_dict to by\_breaks
+
 #### Version 1.1.0
 
 Big changes to make the library to return proper structures by default without
