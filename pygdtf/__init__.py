@@ -32,7 +32,7 @@ from xml.etree.ElementTree import Element
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -1404,6 +1404,12 @@ class DmxMode(BaseNode):
             "virtual_channels_count": self.virtual_channels_count,
         }
 
+    def __str__(self):
+        return f"{self.name}: {self.dmx_channels_count}ch"
+
+    def __repr__(self):
+        return f"{self.name}: {self.dmx_channels_count}ch"
+
 
 class DmxChannel(BaseNode):
     def __init__(
@@ -1622,6 +1628,9 @@ class LogicalChannel(BaseNode):
                 default=DmxValue("0/1"),
             )
         ]
+        for index, channel_function in enumerate(self.channel_functions, start=1):
+            if channel_function.name is None:
+                channel_function.name = f"{channel_function.attribute} {index}"
 
     def __repr__(self):
         return f"{self.attribute.str_link}"
