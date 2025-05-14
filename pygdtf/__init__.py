@@ -32,7 +32,7 @@ from xml.etree.ElementTree import Element
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -1536,7 +1536,7 @@ class DmxChannel(BaseNode):
                     if previous_set_dmx_from is None:
                         # set max value
                         channel_set.dmx_to = DmxValue("0/1")
-                        channel_set.dmx_to.value = (1 << (byte_count * 8)) - 1
+                        channel_set.dmx_to.value = channel_function.dmx_to.value
                         channel_set.dmx_to.byte_count = byte_count
                         previous_set_dmx_from = channel_set.dmx_from
                     else:
@@ -1544,6 +1544,18 @@ class DmxChannel(BaseNode):
                         channel_set.dmx_to = copy.deepcopy(previous_set_dmx_from)
                         channel_set.dmx_to.value -= 1
                         previous_set_dmx_from = channel_set.dmx_from
+                    #
+                    if channel_set.physical_from is None:
+                        physical_from = dmx_to_physical(
+                            channel_function, channel_set.dmx_from.value
+                        )
+                        channel_set.physical_from = float(physical_from)
+
+                    if channel_set.physical_to is None:
+                        physical_to = dmx_to_physical(
+                            channel_function, channel_set.dmx_to.value
+                        )
+                        channel_set.physical_to = float(physical_to)
 
     def __str__(self):
         return f"{self.name} ({self.offset})"
@@ -1744,8 +1756,8 @@ class ChannelSet(BaseNode):
         name: Optional[str] = None,
         dmx_from: "DmxValue" = DmxValue("0/1"),
         dmx_to: "DmxValue" = DmxValue("0/1"),
-        physical_from: float = 0,
-        physical_to: float = 1,
+        physical_from: Optional[Union[float, str]] = None,
+        physical_to: Optional[Union[float, str]] = None,
         wheel_slot_index: int = 1,
         *args,
         **kwargs,
@@ -1764,8 +1776,18 @@ class ChannelSet(BaseNode):
         _dmx_from = copy.deepcopy(self.dmx_from)
         _dmx_from.value += 1
         self.dmx_to = _dmx_from
-        self.physical_from = float(xml_node.attrib.get("PhysicalFrom", 0))
-        self.physical_to = float(xml_node.attrib.get("PhysicalTo", 1))
+        physical_from: Optional[Union[float, str]] = xml_node.attrib.get(
+            "PhysicalFrom", None
+        )
+        if physical_from is not None:
+            physical_from = float(physical_from)
+        self.physical_from = physical_from
+        physical_to: Optional[Union[float, str]] = xml_node.attrib.get(
+            "PhysicalTo", None
+        )
+        if physical_to is not None:
+            physical_to = float(physical_to)
+        self.physical_to = physical_to
         self.wheel_slot_index = int(xml_node.attrib.get("WheelSlotIndex", 1))
 
     def as_dict(self):
@@ -1777,6 +1799,9 @@ class ChannelSet(BaseNode):
             "physical_to": self.physical_to,
             "wheel_slot_index": self.wheel_slot_index,
         }
+
+    def __repr__(self):
+        return f"Name: {self.name}, From: {self.dmx_from.value}, To: {self.dmx_to.value}, PhysFrom: {self.physical_from}, PhysTo:{self.physical_to}"
 
 
 class Relation(BaseNode):

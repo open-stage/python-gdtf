@@ -440,3 +440,20 @@ def parse_date(date_string):
         return datetime.datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%S")
     except ValueError:
         return datetime.datetime(1970, 1, 1, 1, 0, 0)
+
+
+def dmx_to_physical(channel_element, dmx_value):
+    # test if this works or if we need physical_min, physical_max
+
+    if (
+        (channel_element.dmx_from.value - channel_element.dmx_to.value)
+        + channel_element.physical_from
+    ) == 0:
+        return (channel_element.dmx_from.value - channel_element.dmx_from.value) * (
+            channel_element.physical_to - channel_element.physical_from
+        )
+    return (dmx_value - channel_element.dmx_from.value) * (
+        channel_element.physical_to - channel_element.physical_from
+    ) / (
+        channel_element.dmx_to.value - channel_element.dmx_from.value
+    ) + channel_element.physical_from
