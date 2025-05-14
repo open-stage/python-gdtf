@@ -45,6 +45,7 @@ classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python"
 ]
+dependencies = []
 
 [tool.setuptools]
 packages = ["pygdtf", "pygdtf.utils"]
@@ -54,6 +55,7 @@ version = {attr = "pygdtf.__version__"}
 
 [dependency-groups]
 dev = [
+    "pre-commit>=3.5.0",
     "pytest>=8.3.4",
     "pytest-mypy>=0.10.3",
     "ruff>=0.9.3",
