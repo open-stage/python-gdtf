@@ -185,9 +185,11 @@ class SupportType(Enum):
 class Resource:
     def __init__(self, name, extension=None, crc=None):
         self.name = name
-        if name is not None:
+        if name is not None and name != "":
             self.name = self.name.encode("utf-8").decode("cp437")
-        self.extension = extension
+            self.extension = extension
+        else:
+            self.extension = None
         self.crc = crc
 
     def __str__(self):

@@ -507,7 +507,9 @@ class WheelSlot(BaseNode):
         self.name = xml_node.attrib.get("Name")
         self.color = ColorCIE(str_repr=xml_node.attrib.get("Color"))
         self.filter = NodeLink("FilterCollect", xml_node.attrib.get("Filter"))
-        self.media_file_name = Resource(xml_node.attrib.get("MediaFileName", ""), "png")
+        self.media_file_name = Resource(
+            name=xml_node.attrib.get("MediaFileName", ""), extension="png"
+        )
         self.facets = [PrismFacet(xml_node=i) for i in xml_node.findall("Facet")]
 
 
