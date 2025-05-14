@@ -444,6 +444,9 @@ def parse_date(date_string):
 
 def dmx_to_physical(channel_element, dmx_value):
     # test if this works or if we need physical_min, physical_max
+    dmx_range = channel_element.dmx_to.value - channel_element.dmx_from.value
+    if dmx_range == 0:
+        return channel_element.physical_from
 
     if (
         (channel_element.dmx_from.value - channel_element.dmx_to.value)
@@ -452,6 +455,7 @@ def dmx_to_physical(channel_element, dmx_value):
         return (channel_element.dmx_from.value - channel_element.dmx_from.value) * (
             channel_element.physical_to - channel_element.physical_from
         )
+
     return (dmx_value - channel_element.dmx_from.value) * (
         channel_element.physical_to - channel_element.physical_from
     ) / (
