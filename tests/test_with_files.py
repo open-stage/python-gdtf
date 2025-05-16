@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (C) 2023 vanous
+# Copyright (C) none
 #
 # This file is part of pygdtf.
 #
@@ -22,37 +22,25 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import pytest
+import os
 from pathlib import Path
 
-import pytest
 
-from pygdtf import pygdtf
+def test_with_file(request, pygdtf_module):
+    # uv run pytest --file-path=../../gdtfs/ -s
+    file_path = request.config.getoption("--file-path")
 
-# This file sets up a pytest fixtures for the tests
-# It is important that this file stays in this location
-# as this makes pytest to load pygdtf from the pygdtf directory
+    if file_path is None:
+        pytest.skip("File path not provided")
 
+    path = Path(file_path)
+    files = list(path.glob("*.gdtf"))
 
-@pytest.fixture(scope="session")
-def gdtf_fixture():
-    test_fixture_file_path = Path(
-        Path(__file__).parents[0], "tests", "BlenderDMX@LED_PAR_64_RGBW@v0.3.gdtf"
-    )  # test file path is made from current directory, tests directory and a file name
-    gdtf_fixture = pygdtf.FixtureType(test_fixture_file_path)
-    yield gdtf_fixture
+    if not files:
+        pytest.skip(f"No files found in {file_path} matching the pattern")
 
-
-@pytest.fixture(scope="session")
-def pygdtf_module():
-    yield pygdtf
-
-
-def pytest_configure(config):
-    plugin = config.pluginmanager.getplugin("mypy")
-    #    plugin.mypy_argv.append("--no-strict-optional")
-
-
-def pytest_addoption(parser):
-    parser.addoption(
-        "--file-path", action="store", default=None, help="Path to the input file"
-    )
+    for file in files:
+        print(file)
+        with pygdtf_module.FixtureType(file) as f:
+            print(f.name)

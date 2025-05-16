@@ -32,7 +32,7 @@ from xml.etree.ElementTree import Element
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.2.2"
+__version__ = "1.2.3"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -1758,7 +1758,7 @@ class ChannelSet(BaseNode):
         dmx_to: "DmxValue" = DmxValue("0/1"),
         physical_from: Optional[Union[float, str]] = None,
         physical_to: Optional[Union[float, str]] = None,
-        wheel_slot_index: int = 1,
+        wheel_slot_index: int = 0,
         *args,
         **kwargs,
     ):
@@ -1788,7 +1788,7 @@ class ChannelSet(BaseNode):
         if physical_to is not None:
             physical_to = float(physical_to)
         self.physical_to = physical_to
-        self.wheel_slot_index = int(xml_node.attrib.get("WheelSlotIndex", 1))
+        self.wheel_slot_index = max(0, int(xml_node.attrib.get("WheelSlotIndex", 0)))
 
     def as_dict(self):
         return {
