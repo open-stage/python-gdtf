@@ -1463,7 +1463,8 @@ class DmxChannel(BaseNode):
         if highlight_node is not None:
             highlight_value = xml_node.attrib.get("Highlight", "0/1")
 
-            if highlight_value != "None":
+            if highlight_value.lower() != "none":
+                # None is a valid value for Highlight
                 self.highlight = DmxValue(highlight_value)
 
         self.geometry = xml_node.attrib.get("Geometry")

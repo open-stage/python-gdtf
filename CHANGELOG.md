@@ -1,5 +1,15 @@
 ### Changelog
 
+#### Version 1.2.4
+
+* Handle Highlight parsing when "none" is incorrectly supplied
+
+#### Version 1.2.3
+
+* Add ChannelSet physical values processing
+* Set undefined WheelSlotIndex as 0 not as 1
+* Improve Resource parsing
+
 #### Version 1.2.0
 
 Adjustments to the previous re-work, affecting the following:

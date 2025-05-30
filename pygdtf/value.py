@@ -211,9 +211,9 @@ class DmxAddress:
 
 class DmxValue:
     def __init__(self, str_repr):
-        if str_repr == "None":
-            self.value = None
-            self.byte_count = None
+        if str_repr.lower() == "none":
+            self.value = 0
+            self.byte_count = 1
         else:
             self.value = int(str_repr.split("/")[0])
             self.byte_count = int(str_repr.split("/")[1])
