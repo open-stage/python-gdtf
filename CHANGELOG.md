@@ -1,5 +1,10 @@
 ### Changelog
 
+#### Version 1.2.5
+
+* Handle parsing of incorrect DmxValue values
+* Return default FixtureType if ElementTree.fromstring fails on malformed XML
+
 #### Version 1.2.4
 
 * Handle Highlight parsing when "none" is incorrectly supplied
