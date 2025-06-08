@@ -36,11 +36,20 @@ def test_with_file(request, pygdtf_module):
 
     path = Path(file_path)
     files = list(path.glob("*.gdtf"))
+    sorted_files = sorted(files, key=os.path.getmtime, reverse=True)
 
-    if not files:
+    if not sorted_files:
         pytest.skip(f"No files found in {file_path} matching the pattern")
 
-    for file in files:
+    for file in sorted_files:
         print(file)
         with pygdtf_module.FixtureType(file) as f:
-            print(f.name)
+            print(
+                f.name,
+                # f.long_name,
+                # f.short_name,
+                # f.manufacturer,
+                # f.thumbnail,
+                # f.fixture_type_id,
+                # f.description,
+            )
