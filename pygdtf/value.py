@@ -24,6 +24,7 @@
 
 from collections import namedtuple
 from typing import List, Optional, Union
+from .utils import get_int
 
 
 # Data type that only allows a specific set of values, if given a value
@@ -211,12 +212,15 @@ class DmxAddress:
 
 class DmxValue:
     def __init__(self, str_repr):
+        self.value = 0
+        self.byte_count = 1
         if str_repr.lower() == "none":
-            self.value = 0
-            self.byte_count = 1
+            return
+        elif len(str_repr.split("/")) < 2:
+            return
         else:
-            self.value = int(str_repr.split("/")[0])
-            self.byte_count = int(str_repr.split("/")[1])
+            self.value = get_int(str_repr.split("/")[0], 0)
+            self.byte_count = get_int(str_repr.split("/")[1], 1)
 
     def __str__(self):
         return f"Value: {self.value}, Byte count: {self.byte_count}"

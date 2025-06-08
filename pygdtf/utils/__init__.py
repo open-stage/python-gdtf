@@ -461,3 +461,10 @@ def dmx_to_physical(channel_element, dmx_value):
     ) / (
         channel_element.dmx_to.value - channel_element.dmx_from.value
     ) + channel_element.physical_from
+
+
+def get_int(string, default):
+    try:
+        return int(string)
+    except ValueError:
+        return default
