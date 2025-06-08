@@ -63,7 +63,23 @@ def _find_root(pkg: "zipfile.ZipFile") -> "ElementTree.Element":
         description_str = f.read().decode("utf-8")
         if description_str[-1] == "\x00":  # this should not happen, but...
             description_str = description_str[:-1]
-    return ElementTree.fromstring(description_str)
+    try:
+        return ElementTree.fromstring(description_str)
+    except Exception as e:
+        return ElementTree.fromstring(
+            """<GDTF DataVersion='1.0'>
+                <FixtureType
+                  Manufacturer='PyGDTF'
+                  Name='Original File Had Broken XML'
+                  ShortName='Broken XML'
+                  LongName='Original File Had Broken XML'
+                  Description='Original File Had Broken XML'
+                  FixtureTypeID='8EAC5323-C63A-4C21-96CF-5DBF4AF049B6'
+                  RefFT=''
+                  Thumbnail=''>
+                </FixtureType>
+            </GDTF>"""
+        )
 
 
 class FixtureType:
