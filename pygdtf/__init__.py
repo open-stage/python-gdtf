@@ -1388,7 +1388,7 @@ class DmxMode(BaseNode):
                 grouped_breaks[key] += channel.offset
 
         self.dmx_breaks = [
-            DmxModeBreak(dmx_break, len(set(channel_offsets)))
+            DmxModeBreak(dmx_break, max(channel_offsets))
             for dmx_break, channel_offsets in grouped_breaks.items()
         ]
 
