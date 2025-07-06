@@ -442,25 +442,30 @@ def parse_date(date_string):
         return datetime.datetime(1970, 1, 1, 1, 0, 0)
 
 
-def dmx_to_physical(channel_element, dmx_value):
-    # test if this works or if we need physical_min, physical_max
-    dmx_range = channel_element.dmx_to.value - channel_element.dmx_from.value
+def dmx_to_physical(
+    dmx_value,
+    channel_element=None,
+    dmx_from=None,
+    dmx_to=None,
+    physical_from=None,
+    physical_to=None,
+):
+    if channel_element is not None:
+        dmx_from = channel_element.dmx_from.value
+        dmx_to = channel_element.dmx_to.value
+        physical_from = channel_element.physical_from.value
+        physical_to = channel_element.physical_to.value
+
+    dmx_range = dmx_to - dmx_from
     if dmx_range == 0:
-        return channel_element.physical_from
+        return physical_from
 
-    if (
-        (channel_element.dmx_from.value - channel_element.dmx_to.value)
-        + channel_element.physical_from
-    ) == 0:
-        return (channel_element.dmx_from.value - channel_element.dmx_from.value) * (
-            channel_element.physical_to - channel_element.physical_from
-        )
+    if ((dmx_from - dmx_to) + physical_from) == 0:
+        return (dmx_from - dmx_from) * (physical_to - physical_from)
 
-    return (dmx_value - channel_element.dmx_from.value) * (
-        channel_element.physical_to - channel_element.physical_from
-    ) / (
-        channel_element.dmx_to.value - channel_element.dmx_from.value
-    ) + channel_element.physical_from
+    return (dmx_value - dmx_from) * (physical_to - physical_from) / (
+        dmx_to - dmx_from
+    ) + physical_from
 
 
 def get_int(string, default):
