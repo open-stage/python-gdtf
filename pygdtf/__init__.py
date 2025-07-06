@@ -1454,7 +1454,16 @@ class DmxChannel(BaseNode):
         self.initial_function = initial_function
         self.geometry = geometry
         self.name = name
-        self.logical_channels = logical_channels
+
+        if logical_channels is not None:
+            self.logical_channels = logical_channels
+        else:
+            # make this invalid GDTF file valid
+            self.logical_channels = [
+                LogicalChannel(
+                    attribute=NodeLink("Attributes", "NoFeature"),
+                )
+            ]
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
@@ -1618,7 +1627,7 @@ class DmxChannel(BaseNode):
 class LogicalChannel(BaseNode):
     def __init__(
         self,
-        attribute: Optional["NodeLink"] = None,
+        attribute: Union["NodeLink", None] = NodeLink("Attributes", "NoFeature"),
         snap: "Snap" = Snap(None),
         master: "Master" = Master(None),
         mib_fade: float = 0,
@@ -1680,7 +1689,7 @@ class ChannelFunction(BaseNode):
     def __init__(
         self,
         name: Optional[str] = None,
-        attribute: Union["NodeLink", str] = NodeLink("Attributes", "NoFeature"),
+        attribute: Union["NodeLink", None] = NodeLink("Attributes", "NoFeature"),
         original_attribute: Optional[str] = None,
         dmx_from: "DmxValue" = DmxValue("0/1"),
         dmx_to: "DmxValue" = DmxValue("0/1"),
@@ -1703,6 +1712,7 @@ class ChannelFunction(BaseNode):
         self.attribute = attribute
         self.original_attribute = original_attribute
         self.dmx_from = dmx_from
+        self.dmx_to = dmx_to
         self.default = default
         self.physical_from = physical_from
         self.physical_to = physical_to
