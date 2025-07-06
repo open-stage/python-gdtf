@@ -183,6 +183,11 @@ class SupportType(Enum):
     _default = "Rope"
 
 
+class PhysicalSource(Enum):
+    permitted = ["Set", "Function"]
+    _default = "Set"
+
+
 class Resource:
     def __init__(self, name, extension=None, crc=None):
         self.name = name
@@ -238,6 +243,21 @@ class DmxValue:
         if not fine:
             return msb
         return lsb
+
+
+class PhysicalValue:
+    def __init__(self, str_repr):
+        self.value = None
+        self.source = PhysicalSource("Set")
+
+        if str_repr is not None:
+            self.value = float(str_repr)
+
+    def __str__(self):
+        return f"Value: {self.value}"
+
+    def __repr__(self):
+        return f"Value: {self.value}"
 
 
 class ColorCIE:
