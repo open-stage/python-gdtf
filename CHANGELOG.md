@@ -1,5 +1,10 @@
 ### Changelog
 
+#### 1.2.6
+
+* Make physical\_from/\_to a PhysicalValue object with properties
+* To get physical values, use physical\_from.value and physical\_to.value
+
 #### Version 1.2.5
 
 * Handle parsing of incorrect DmxValue values
