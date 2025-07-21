@@ -1361,6 +1361,23 @@ class DmxMode(BaseNode):
                 for i in dmx_channels_collect.findall("DMXChannel")
             ]
 
+        self._process_dmx_channels()
+        if self._check_for_missing_channels():
+            self._process_dmx_channels()
+
+        relations_node = xml_node.find("Relations")
+        if relations_node is not None:
+            self.relations = [
+                Relation(xml_node=i) for i in relations_node.findall("Relation")
+            ]
+
+        ftmacros_node = xml_node.find("FTMacros")
+        if ftmacros_node is not None:
+            self.ft_macros = [
+                Macro(xml_node=i) for i in ftmacros_node.findall("FTMacro")
+            ]
+
+    def _process_dmx_channels(self):
         dmx_channels = get_dmx_channels(
             gdtf_profile=self.fixture_type,
             dmx_mode=self,
@@ -1398,17 +1415,35 @@ class DmxMode(BaseNode):
 
         self.virtual_channels_count = len(self.virtual_channels)
 
-        relations_node = xml_node.find("Relations")
-        if relations_node is not None:
-            self.relations = [
-                Relation(xml_node=i) for i in relations_node.findall("Relation")
-            ]
+    def _check_for_missing_channels(self):
+        # check if channels are missing and add them
+        result = False
+        highest_offset = 0
+        for channel in self.dmx_channels:
+            if channel.offset is not None:
+                if channel.offset[0] > highest_offset:
+                    highest_offset = max(channel.offset)
 
-        ftmacros_node = xml_node.find("FTMacros")
-        if ftmacros_node is not None:
-            self.ft_macros = [
-                Macro(xml_node=i) for i in ftmacros_node.findall("FTMacro")
-            ]
+        if len(self.dmx_channels) != highest_offset:
+            # we have missing channels
+            for i in range(1, highest_offset + 1):
+                found = False
+                for channel in self.dmx_channels:
+                    if channel.offset is not None:
+                        if i in channel.offset:
+                            found = True
+                            break
+                if not found:
+                    result = True
+                    self._dmx_channels.append(
+                        DmxChannel(
+                            name="NoFeature",
+                            offset=[i],
+                            geometry=self.geometry,
+                            attribute=NodeLink("Attributes", "NoFeature"),
+                        )
+                    )
+        return result
 
     def as_dict(self):
         return {
@@ -1653,6 +1688,7 @@ class LogicalChannel(BaseNode):
             # make this invalid GDTF file valid
             self.channel_functions = [
                 ChannelFunction(
+                    name="NoFeature",
                     attribute=NodeLink("Attributes", "NoFeature"),
                     default=DmxValue("0/1"),
                 )
