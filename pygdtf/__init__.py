@@ -506,6 +506,7 @@ class WheelSlot(BaseNode):
         whl_filter: Optional["NodeLink"] = None,
         media_file_name: Optional["Resource"] = None,
         facets: Optional[List["PrismFacet"]] = None,
+        animation_system: Optional["AnimationSystem"] = None,
         *args,
         **kwargs,
     ):
@@ -517,6 +518,7 @@ class WheelSlot(BaseNode):
             self.facets = facets
         else:
             self.facets = []
+        self.animation_system = animation_system
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
@@ -527,6 +529,9 @@ class WheelSlot(BaseNode):
             name=xml_node.attrib.get("MediaFileName", ""), extension="png"
         )
         self.facets = [PrismFacet(xml_node=i) for i in xml_node.findall("Facet")]
+        animation_system_node = xml_node.find("AnimationSystem")
+        if animation_system_node is not None:
+            self.animation_system = AnimationSystem(xml_node=animation_system_node)
 
 
 class PrismFacet(BaseNode):
@@ -544,6 +549,40 @@ class PrismFacet(BaseNode):
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.color = ColorCIE(str_repr=xml_node.attrib.get("Color"))
         self.rotation = Rotation(str_repr=xml_node.attrib.get("Rotation"))
+
+
+class AnimationSystem(BaseNode):
+    def __init__(
+        self,
+        p1: Optional[List[float]] = None,
+        p2: Optional[List[float]] = None,
+        p3: Optional[List[float]] = None,
+        radius: float = 0.0,
+        *args,
+        **kwargs,
+    ):
+        self.p1 = p1 if p1 is not None else []
+        self.p2 = p2 if p2 is not None else []
+        self.p3 = p3 if p3 is not None else []
+        self.radius = radius
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
+        p1_str = xml_node.attrib.get("P1")
+        if p1_str:
+            self.p1 = [float(x.strip()) for x in p1_str.split(",")]
+
+        p2_str = xml_node.attrib.get("P2")
+        if p2_str:
+            self.p2 = [float(x.strip()) for x in p2_str.split(",")]
+
+        p3_str = xml_node.attrib.get("P3")
+        if p3_str:
+            self.p3 = [float(x.strip()) for x in p3_str.split(",")]
+
+        radius_str = xml_node.attrib.get("Radius")
+        if radius_str:
+            self.radius = float(radius_str)
 
 
 class Emitter(BaseNode):
