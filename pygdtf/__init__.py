@@ -182,6 +182,14 @@ class FixtureType:
                 # The default color space is sRGB if nothing else is defined
                 self.color_space = ColorSpace(mode=ColorSpaceMode("sRGB"))
 
+            gamut_collect = physical_descriptions_node.find("Gamuts")
+            if gamut_collect is not None:
+                self.gamuts = [
+                    Gamut(xml_node=i) for i in gamut_collect.findall("Gamut")
+                ]
+            else:
+                self.gamuts = []
+
             profiles_collect = physical_descriptions_node.find("DMXProfiles")
             if profiles_collect is not None:
                 self.dmx_profiles = [
@@ -719,6 +727,27 @@ class ColorSpace(BaseNode):
 
 class DmxProfile(BaseNode):
     pass
+
+
+class Gamut(BaseNode):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        points: Optional[List["ColorCIE"]] = None,
+        *args,
+        **kwargs,
+    ):
+        self.name = name
+        self.points = points if points is not None else []
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
+        self.name = xml_node.attrib.get("Name")
+        points_str = xml_node.attrib.get("Points")
+        if points_str:
+            points_arr = points_str.split(";")
+            for p in points_arr:
+                self.points.append(ColorCIE(str_repr=p))
 
 
 class CriGroup(BaseNode):
@@ -1781,6 +1810,7 @@ class ChannelFunction(BaseNode):
         wheel: Optional["NodeLink"] = None,
         emitter: Optional["NodeLink"] = None,
         chn_filter: Optional["NodeLink"] = None,
+        gamut: Optional["NodeLink"] = None,
         dmx_invert: "DmxInvert" = DmxInvert(None),
         mode_master: Optional["NodeLink"] = None,
         mode_from: "DmxValue" = DmxValue("0/1"),
@@ -1801,6 +1831,7 @@ class ChannelFunction(BaseNode):
         self.wheel = wheel
         self.emitter = emitter
         self.filter = chn_filter
+        self.gamut = gamut
         self.dmx_invert = dmx_invert
         self.mode_master = mode_master
         self.mode_from = mode_from
@@ -1828,6 +1859,7 @@ class ChannelFunction(BaseNode):
         self.wheel = NodeLink("WheelCollect", xml_node.attrib.get("Wheel"))
         self.emitter = NodeLink("EmitterCollect", xml_node.attrib.get("Emitter"))
         self.filter = NodeLink("FilterCollect", xml_node.attrib.get("Filter"))
+        self.gamut = NodeLink("GamutCollect", xml_node.attrib.get("Gamut"))
         self.dmx_invert = DmxInvert(xml_node.attrib.get("DMXInvert"))
         self.mode_master = NodeLink("DMXChannel", xml_node.attrib.get("ModeMaster"))
         self.mode_from = DmxValue(xml_node.attrib.get("ModeFrom", "0/1"))
