@@ -1249,6 +1249,28 @@ class Protocol(BaseNode):
         return f"{self.name}"
 
 
+class PinPatch(BaseNode):
+    def __init__(
+        self,
+        to_wiring_object: Optional["NodeLink"] = None,
+        from_pin: int = 0,
+        to_pin: int = 0,
+        *args,
+        **kwargs,
+    ):
+        self.to_wiring_object = to_wiring_object
+        self.from_pin = from_pin
+        self.to_pin = to_pin
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
+        self.to_wiring_object = NodeLink(
+            "WiringObject", xml_node.attrib.get("ToWiringObject")
+        )
+        self.from_pin = int(xml_node.attrib.get("FromPin", 0))
+        self.to_pin = int(xml_node.attrib.get("ToPin", 0))
+
+
 class GeometryWiringObject(Geometry):
     def __init__(
         self,
@@ -1269,6 +1291,7 @@ class GeometryWiringObject(Geometry):
         fuse_rating: "FuseRating" = FuseRating(None),
         orientation: "Orientation" = Orientation(None),
         wire_group: Optional[str] = None,
+        pin_patches: Optional[List["PinPatch"]] = None,
         *args,
         **kwargs,
     ):
@@ -1289,6 +1312,7 @@ class GeometryWiringObject(Geometry):
         self.fuse_rating = fuse_rating
         self.orientation = orientation
         self.wire_group = wire_group
+        self.pin_patches = pin_patches if pin_patches is not None else []
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
@@ -1310,6 +1334,7 @@ class GeometryWiringObject(Geometry):
         self.fuse_rating = FuseRating(xml_node.attrib.get("FuseRating"))
         self.orientation = Orientation(xml_node.attrib.get("Orientation"))
         self.wire_group = xml_node.attrib.get("WireGroup")
+        self.pin_patches = [PinPatch(xml_node=i) for i in xml_node.findall("PinPatch")]
 
 
 class GeometryReference(BaseNode):
