@@ -1918,14 +1918,20 @@ class ChannelFunction(BaseNode):
         physical_from: "PhysicalValue" = PhysicalValue(0),
         physical_to: "PhysicalValue" = PhysicalValue(1),
         real_fade: float = 0,
+        real_acceleration: float = 0,
         wheel: Optional["NodeLink"] = None,
         emitter: Optional["NodeLink"] = None,
         chn_filter: Optional["NodeLink"] = None,
+        color_space: Optional["NodeLink"] = None,
         gamut: Optional["NodeLink"] = None,
+        dmx_profile: Optional["NodeLink"] = None,
         dmx_invert: "DmxInvert" = DmxInvert(None),
         mode_master: Optional["NodeLink"] = None,
         mode_from: "DmxValue" = DmxValue("0/1"),
         mode_to: "DmxValue" = DmxValue("0/1"),
+        min_val: Optional[float] = None,
+        max_val: Optional[float] = None,
+        custom_name: Optional[str] = None,
         channel_sets: Optional[List["ChannelSet"]] = None,
         sub_channel_sets: Optional[List["SubChannelSet"]] = None,
         *args,
@@ -1940,14 +1946,20 @@ class ChannelFunction(BaseNode):
         self.physical_from = physical_from
         self.physical_to = physical_to
         self.real_fade = real_fade
+        self.real_acceleration = real_acceleration
         self.wheel = wheel
         self.emitter = emitter
         self.filter = chn_filter
+        self.color_space = color_space
         self.gamut = gamut
+        self.dmx_profile = dmx_profile
         self.dmx_invert = dmx_invert
         self.mode_master = mode_master
         self.mode_from = mode_from
         self.mode_to = mode_to
+        self.min_val = min_val
+        self.max_val = max_val
+        self.custom_name = custom_name
         if channel_sets is not None:
             self.channel_sets = channel_sets
         else:
@@ -1972,14 +1984,32 @@ class ChannelFunction(BaseNode):
         self.physical_from = PhysicalValue(xml_node.attrib.get("PhysicalFrom", 0))
         self.physical_to = PhysicalValue(xml_node.attrib.get("PhysicalTo", 1))
         self.real_fade = float(xml_node.attrib.get("RealFade", 0))
+        self.real_acceleration = float(xml_node.attrib.get("RealAcceleration", 0))
         self.wheel = NodeLink("WheelCollect", xml_node.attrib.get("Wheel"))
         self.emitter = NodeLink("EmitterCollect", xml_node.attrib.get("Emitter"))
         self.filter = NodeLink("FilterCollect", xml_node.attrib.get("Filter"))
+        self.color_space = NodeLink(
+            "PhysicalDescriptions", xml_node.attrib.get("ColorSpace")
+        )
         self.gamut = NodeLink("GamutCollect", xml_node.attrib.get("Gamut"))
+        self.dmx_profile = NodeLink(
+            "DMXProfileCollect", xml_node.attrib.get("DMXProfile")
+        )
         self.dmx_invert = DmxInvert(xml_node.attrib.get("DMXInvert"))
         self.mode_master = NodeLink("DMXChannel", xml_node.attrib.get("ModeMaster"))
         self.mode_from = DmxValue(xml_node.attrib.get("ModeFrom", "0/1"))
         self.mode_to = DmxValue(xml_node.attrib.get("ModeTo", "0/1"))
+        min_val = xml_node.attrib.get("Min")
+        if min_val is not None:
+            self.min_val = float(min_val)
+        else:
+            self.min_val = self.physical_from.value
+        max_val = xml_node.attrib.get("Max")
+        if max_val is not None:
+            self.max_val = float(max_val)
+        else:
+            self.max_val = self.physical_to.value
+        self.custom_name = xml_node.attrib.get("CustomName")
         self.channel_sets = [
             ChannelSet(xml_node=i) for i in xml_node.findall("ChannelSet")
         ]
