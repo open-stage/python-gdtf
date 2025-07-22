@@ -24,21 +24,19 @@
 
 import datetime
 import zipfile
-from typing import List, Optional, Union, Dict
+from typing import Dict, List, Optional, Union
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
-
-from .utils import *
-from .value import *  # type: ignore
 
 from .base_node import BaseNode
 from .dmxbreak import *
 from .geometries import *
-from .protocols import *
 from .macro import *
 from .properties import *
+from .protocols import *
 from .revisions import *
-
+from .utils import *
+from .value import *  # type: ignore
 
 __version__ = "1.2.6"
 

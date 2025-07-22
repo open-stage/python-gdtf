@@ -1,4 +1,4 @@
-from typing import List, Optional, Union, Dict
+from typing import Dict, List, Optional, Union
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 

@@ -24,6 +24,7 @@
 
 from collections import namedtuple
 from typing import List, Optional, Union
+
 from .utils import get_int
 
 

@@ -1,9 +1,10 @@
-from typing import List, Optional, Union, Dict
+from enum import Enum as pyEnum
+from typing import Dict, List, Optional, Union
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
+
 from .base_node import BaseNode
 from .value import *  # type: ignore
-from enum import Enum as pyEnum
 
 
 class Break(BaseNode):
