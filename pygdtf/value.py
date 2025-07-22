@@ -75,6 +75,22 @@ class PhysicalUnit(Enum):
     default = "None"
 
 
+class SubPhysicalUnitType(Enum):
+    permitted = [
+        "PlacementOffset",
+        "Amplitude",
+        "AmplitudeMin",
+        "AmplitudeMax",
+        "Duration",
+        "DutyCycle",
+        "TimeOffset",
+        "MinimumOpening",
+        "Value",
+        "RatioHorizontal",
+        "RatioVertical",
+    ]
+
+
 class InterpolationTo(Enum):
     permitted = ["Linear", "Step", "Log"]
     _default = "Linear"

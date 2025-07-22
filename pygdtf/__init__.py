@@ -460,6 +460,7 @@ class Attribute(BaseNode):
         main_attribute: Optional["NodeLink"] = None,
         physical_unit: "PhysicalUnit" = PhysicalUnit(None),
         color: Optional["ColorCIE"] = None,
+        subphysical_units: Optional[List["SubPhysicalUnit"]] = None,
         *args,
         **kwargs,
     ):
@@ -470,6 +471,9 @@ class Attribute(BaseNode):
         self.main_attribute = main_attribute
         self.physical_unit = physical_unit
         self.color = color
+        self.subphysical_units = (
+            subphysical_units if subphysical_units is not None else []
+        )
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
@@ -484,6 +488,38 @@ class Attribute(BaseNode):
         )
         self.physical_unit = PhysicalUnit(xml_node.attrib.get("PhysicalUnit"))
         self.color = ColorCIE(str_repr=xml_node.attrib.get("Color"))
+        self.subphysical_units = [
+            SubPhysicalUnit(xml_node=i) for i in xml_node.findall("SubPhysicalUnit")
+        ]
+
+
+class SubPhysicalUnit(BaseNode):
+    def __init__(
+        self,
+        unit_type: Optional["SubPhysicalUnitType"] = None,
+        physical_unit: Optional["PhysicalUnit"] = None,
+        physical_from: float = 0.0,
+        physical_to: float = 1.0,
+        *args,
+        **kwargs,
+    ):
+        self.type = unit_type
+        if self.type is None:
+            self.type = SubPhysicalUnitType(None)
+
+        self.physical_unit = physical_unit
+        if self.physical_unit is None:
+            self.physical_unit = PhysicalUnit(None)
+
+        self.physical_from = physical_from
+        self.physical_to = physical_to
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
+        self.type = SubPhysicalUnitType(xml_node.attrib.get("Type"))
+        self.physical_unit = PhysicalUnit(xml_node.attrib.get("PhysicalUnit", "None"))
+        self.physical_from = float(xml_node.attrib.get("PhysicalFrom", 0.0))
+        self.physical_to = float(xml_node.attrib.get("PhysicalTo", 1.0))
 
 
 class Wheel(BaseNode):
