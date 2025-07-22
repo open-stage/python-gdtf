@@ -9,34 +9,30 @@ class Macro(BaseNode):
     def __init__(
         self,
         name: Optional[str] = None,
+        channel_function: Optional["NodeLink"] = None,
         dmx_steps: Optional[List["MacroDmxStep"]] = None,
-        visual_steps: Optional[List["MacroVisualStep"]] = None,
         *args,
         **kwargs,
     ):
         self.name = name
+        self.channel_function = channel_function
         if dmx_steps is not None:
             self.dmx_steps = dmx_steps
         else:
             self.dmx_steps = []
-        if visual_steps is not None:
-            self.visual_steps = visual_steps
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.name = xml_node.attrib.get("Name")
+        self.channel_function = NodeLink(
+            "DMXMode", xml_node.attrib.get("ChannelFunction")
+        )
 
         macro_dmx_collect = xml_node.find("MacroDMX")
         if macro_dmx_collect is not None:
             self.dmx_steps = [
                 MacroDmxStep(xml_node=i)
                 for i in macro_dmx_collect.findall("MacroDMXStep")
-            ]
-        macro_visual_collect = xml_node.find("MacroVisual")
-        if macro_visual_collect is not None:
-            self.visual_steps = [
-                MacroVisualStep(xml_node=i)
-                for i in macro_visual_collect.findall("MacroVisualStep")
             ]
 
 
@@ -78,51 +74,4 @@ class MacroDmxValue(BaseNode):
         self.value = DmxValue(xml_node.attrib.get("Value"))
         self.dmx_channel = NodeLink(
             "DMXChannelCollect", xml_node.attrib.get("DMXChannel")
-        )
-
-
-class MacroVisualStep(BaseNode):
-    def __init__(
-        self,
-        duration: int = 1,
-        fade: float = 0.0,
-        delay: float = 0.0,
-        visual_values: Optional[List["MacroVisualValue"]] = None,
-        *args,
-        **kwargs,
-    ):
-        self.duration = duration
-        self.fade = fade
-        self.delay = delay
-        if visual_values is not None:
-            self.visual_values = visual_values
-        else:
-            self.visual_values = []
-        super().__init__(*args, **kwargs)
-
-    def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
-        self.duration = int(xml_node.attrib.get("Duration", 1))
-        self.fade = float(xml_node.attrib.get("Fade", 0.0))
-        self.delay = float(xml_node.attrib.get("Delay", 0.0))
-        self.visual_values = [
-            MacroVisualValue(xml_node=i) for i in xml_node.findall("MacroVisualValue")
-        ]
-
-
-class MacroVisualValue(BaseNode):
-    def __init__(
-        self,
-        macro_value: Optional["DmxValue"] = None,
-        channel_function: Optional["NodeLink"] = None,
-        *args,
-        **kwargs,
-    ):
-        self.value = macro_value
-        self.channel_function = channel_function
-        super().__init__(*args, **kwargs)
-
-    def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
-        self.value = DmxValue(xml_node.attrib.get("Value"))
-        self.channel_function = NodeLink(
-            "DMXChannelCollect", xml_node.attrib.get("ChannelFunction")
         )
