@@ -26,18 +26,21 @@ class Revision(BaseNode):
         text: Optional[str] = None,
         date: Optional[str] = None,
         user_id: int = 0,
+        modified_by: Optional[str] = None,
         *args,
         **kwargs,
     ):
         self.text = text
         self.date = date
         self.user_id = user_id
+        self.modified_by = modified_by
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.text = xml_node.attrib.get("Text")
         self.date = xml_node.attrib.get("Date")
         self.user_id = int(xml_node.attrib.get("UserID", 0))
+        self.modified_by = xml_node.attrib.get("ModifiedBy")
 
     class date_formats(pyEnum):
         STRING = "string"
@@ -60,4 +63,9 @@ class Revision(BaseNode):
         return f"{self.text} {self.date}"
 
     def as_dict(self):
-        return {"text": self.text, "date": self.date, "user_id": self.user_id}
+        return {
+            "text": self.text,
+            "date": self.date,
+            "user_id": self.user_id,
+            "modified_by": self.modified_by,
+        }
