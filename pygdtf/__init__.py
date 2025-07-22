@@ -1147,6 +1147,9 @@ class GeometryBeam(Geometry):
         beam_radius: float = 0.05,
         beam_type: BeamType = BeamType(None),
         color_rendering_index: int = 100,
+        throw_ratio: float = 1.0,
+        rectangle_ratio: float = 1.7777,
+        emitter_spectrum: Optional["NodeLink"] = None,
         *args,
         **kwargs,
     ):
@@ -1159,6 +1162,9 @@ class GeometryBeam(Geometry):
         self.beam_radius = beam_radius
         self.beam_type = beam_type
         self.color_rendering_index = color_rendering_index
+        self.throw_ratio = throw_ratio
+        self.rectangle_ratio = rectangle_ratio
+        self.emitter_spectrum = emitter_spectrum
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
@@ -1173,6 +1179,11 @@ class GeometryBeam(Geometry):
         self.beam_type = BeamType(xml_node.attrib.get("BeamType"))
         self.color_rendering_index = int(
             xml_node.attrib.get("ColorRenderingIndex", 100)
+        )
+        self.throw_ratio = float(xml_node.attrib.get("ThrowRatio", 1.0))
+        self.rectangle_ratio = float(xml_node.attrib.get("RectangleRatio", 1.7777))
+        self.emitter_spectrum = NodeLink(
+            "EmitterCollect", xml_node.attrib.get("EmitterSpectrum")
         )
 
 
