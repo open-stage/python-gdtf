@@ -725,8 +725,47 @@ class ColorSpace(BaseNode):
             self.definition = COLOR_SPACE_ANSI
 
 
+class Point(BaseNode):
+    def __init__(
+        self,
+        dmx_percentage: float = 0.0,
+        cfc0: float = 0.0,
+        cfc1: float = 0.0,
+        cfc2: float = 0.0,
+        cfc3: float = 0.0,
+        *args,
+        **kwargs,
+    ):
+        self.dmx_percentage = dmx_percentage
+        self.cfc0 = cfc0
+        self.cfc1 = cfc1
+        self.cfc2 = cfc2
+        self.cfc3 = cfc3
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
+        self.dmx_percentage = float(xml_node.attrib.get("DMXPercentage", 0.0))
+        self.cfc0 = float(xml_node.attrib.get("CFC0", 0.0))
+        self.cfc1 = float(xml_node.attrib.get("CFC1", 0.0))
+        self.cfc2 = float(xml_node.attrib.get("CFC2", 0.0))
+        self.cfc3 = float(xml_node.attrib.get("CFC3", 0.0))
+
+
 class DmxProfile(BaseNode):
-    pass
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        points: Optional[List["Point"]] = None,
+        *args,
+        **kwargs,
+    ):
+        self.name = name
+        self.points = points if points is not None else []
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
+        self.name = xml_node.attrib.get("Name")
+        self.points = [Point(xml_node=i) for i in xml_node.findall("Point")]
 
 
 class Gamut(BaseNode):
