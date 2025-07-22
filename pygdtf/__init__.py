@@ -1927,6 +1927,7 @@ class ChannelFunction(BaseNode):
         mode_from: "DmxValue" = DmxValue("0/1"),
         mode_to: "DmxValue" = DmxValue("0/1"),
         channel_sets: Optional[List["ChannelSet"]] = None,
+        sub_channel_sets: Optional[List["SubChannelSet"]] = None,
         *args,
         **kwargs,
     ):
@@ -1951,6 +1952,10 @@ class ChannelFunction(BaseNode):
             self.channel_sets = channel_sets
         else:
             self.channel_sets = []
+        if sub_channel_sets is not None:
+            self.sub_channel_sets = sub_channel_sets
+        else:
+            self.sub_channel_sets = []
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
@@ -1978,6 +1983,9 @@ class ChannelFunction(BaseNode):
         self.channel_sets = [
             ChannelSet(xml_node=i) for i in xml_node.findall("ChannelSet")
         ]
+        self.sub_channel_sets = [
+            SubChannelSet(xml_node=i) for i in xml_node.findall("SubChannelSet")
+        ]
 
     def __str__(self):
         return f"{self.name}, {self.attribute.str_link}"
@@ -1998,7 +2006,40 @@ class ChannelFunction(BaseNode):
             "channel_sets": [
                 channel_set.as_dict() for channel_set in self.channel_sets
             ],
+            # "sub_channel_sets": [
+            #    sub_channel_set.as_dict() for sub_channel_set in self.sub_channel_sets
+            # ],
         }
+
+
+class SubChannelSet(BaseNode):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        physical_from: float = 0.0,
+        physical_to: float = 1.0,
+        sub_physical_unit: Optional["NodeLink"] = None,
+        dmx_profile: Optional["NodeLink"] = None,
+        *args,
+        **kwargs,
+    ):
+        self.name = name
+        self.physical_from = physical_from
+        self.physical_to = physical_to
+        self.sub_physical_unit = sub_physical_unit
+        self.dmx_profile = dmx_profile
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
+        self.name = xml_node.attrib.get("Name")
+        self.physical_from = float(xml_node.attrib.get("PhysicalFrom", 0.0))
+        self.physical_to = float(xml_node.attrib.get("PhysicalTo", 1.0))
+        self.sub_physical_unit = NodeLink(
+            "Attribute", xml_node.attrib.get("SubPhysicalUnit")
+        )
+        self.dmx_profile = NodeLink(
+            "DMXProfileCollect", xml_node.attrib.get("DMXProfile")
+        )
 
 
 class ChannelSet(BaseNode):
@@ -2031,6 +2072,12 @@ class ChannelSet(BaseNode):
         self.physical_to = PhysicalValue(xml_node.attrib.get("PhysicalTo", None))
         self.wheel_slot_index = max(0, int(xml_node.attrib.get("WheelSlotIndex", 0)))
 
+    def __str__(self):
+        return f"{self.name}"
+
+    def __repr__(self):
+        return f"Name: {self.name}, DMX From: {self.dmx_from}, DMX To: {self.dmx_to}"
+
     def as_dict(self):
         return {
             "name": self.name,
@@ -2040,9 +2087,6 @@ class ChannelSet(BaseNode):
             "physical_to": self.physical_to.value,
             "wheel_slot_index": self.wheel_slot_index,
         }
-
-    def __repr__(self):
-        return f"Name: {self.name}, From: {self.dmx_from.value}, To: {self.dmx_to.value}, PhysFrom ({self.physical_from.source.value}): {self.physical_from.value}, PhysTo ({self.physical_to.source.value}): {self.physical_to.value}"
 
 
 class Relation(BaseNode):
