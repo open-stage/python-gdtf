@@ -34,7 +34,6 @@ from .value import *  # type: ignore
 from .base_node import BaseNode
 from .dmxbreak import *
 from .geometries import *
-from .presets import *
 from .protocols import *
 from .macro import *
 from .properties import *
@@ -360,14 +359,6 @@ class FixtureType:
                 self.protocols.append(OpenSoundControl(xml_node=i))
             for i in protocols_collect.findall("CITP"):
                 self.protocols.append(Citp(xml_node=i))
-
-        ft_presets_collect = self._root.find("FTPresets")
-        if ft_presets_collect is not None:
-            self.ft_presets = FTPresets(
-                [FTPreset(xml_node=i) for i in ft_presets_collect.findall("FTPreset")]
-            )
-        else:
-            self.ft_presets = FTPresets()
 
 
 class Thumbnails(BaseNode):
