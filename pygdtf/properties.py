@@ -22,8 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from typing import Dict, List, Optional, Union
-from xml.etree import ElementTree
+from typing import Optional
 from xml.etree.ElementTree import Element
 
 from .base_node import BaseNode

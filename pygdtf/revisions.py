@@ -23,8 +23,7 @@
 # SOFTWARE.
 
 from enum import Enum as pyEnum
-from typing import Dict, List, Optional, Union
-from xml.etree import ElementTree
+from typing import Optional
 from xml.etree.ElementTree import Element
 
 from .base_node import BaseNode
