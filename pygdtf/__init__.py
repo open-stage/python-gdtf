@@ -2435,21 +2435,6 @@ class DmxPersonality(BaseNode):
         return f"{self.dmx_mode} ({self.value})"
 
 
-class ArtNet(BaseNode):
-    def __init__(
-        self,
-        maps: Optional[List["Map"]] = None,
-        *args,
-        **kwargs,
-    ):
-        if maps is not None:
-            self.maps = maps
-        super().__init__(*args, **kwargs)
-
-    def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
-        self.maps = [Map(xml_node=i) for i in xml_node.findall("Map")]
-
-
 class Map(BaseNode):
     def __init__(
         self,
@@ -2470,8 +2455,34 @@ class Map(BaseNode):
         return f"{self.key} {self.value}"
 
 
+class ArtNet(BaseNode):
+    def __init__(
+        self,
+        maps: Optional[List["Map"]] = None,
+        *args,
+        **kwargs,
+    ):
+        if maps is not None:
+            self.maps = maps
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
+        self.maps = [Map(xml_node=i) for i in xml_node.findall("Map")]
+
+
 class Sacn(BaseNode):
-    pass
+    def __init__(
+        self,
+        maps: Optional[List["Map"]] = None,
+        *args,
+        **kwargs,
+    ):
+        if maps is not None:
+            self.maps = maps
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
+        self.maps = [Map(xml_node=i) for i in xml_node.findall("Map")]
 
 
 class PosiStageNet(BaseNode):
@@ -2484,6 +2495,7 @@ class OpenSoundControl(BaseNode):
 
 class Citp(BaseNode):
     pass
+
 
 class PresetValue(BaseNode):
     def __init__(
