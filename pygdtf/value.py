@@ -24,6 +24,7 @@
 
 from collections import namedtuple
 from typing import List, Optional, Union
+
 from .utils import get_int
 
 
@@ -73,6 +74,22 @@ class PhysicalUnit(Enum):
         "ColorComponent",
     ]
     default = "None"
+
+
+class SubPhysicalUnitType(Enum):
+    permitted = [
+        "PlacementOffset",
+        "Amplitude",
+        "AmplitudeMin",
+        "AmplitudeMax",
+        "Duration",
+        "DutyCycle",
+        "TimeOffset",
+        "MinimumOpening",
+        "Value",
+        "RatioHorizontal",
+        "RatioVertical",
+    ]
 
 
 class InterpolationTo(Enum):

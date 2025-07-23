@@ -46,14 +46,22 @@ See [CHANGELOG](CHANGELOG.md) for details.
 
 ## Installation
 
+- with uv:
+
+```bash
+uv add pygdtf
+```
+
+- with pip
+
 ```bash
 pip install pygdtf
 ```
 
-To install latest version from this git repository, run pip:
+### Latest development version (if exists on pypi.org)
 
 ```bash
-python -m pip install https://codeload.github.com/open-stage/python-gdtf/zip/refs/heads/master
+uv add pygdtf --pre
 ```
 
 ## Usage
@@ -130,11 +138,7 @@ uv sync
 
 ### Typing
 
-- We try to type the main library as well as the utils module, to test run:
-
-```bash
-mypy pygdtf/**py  --pretty
-```
+- We try to type the main library as well as the utils module, see tests below.
 
 ### Format
 
@@ -143,9 +147,9 @@ mypy pygdtf/**py  --pretty
 
 ### Testing
 
-- to test, run: `pytest`
+- to test, run: `uv run pytest`
 - to test typing with mypy run pytest:
 
 ```bash
-pytest --mypy -m mypy pygdtf/**py
+uv run pytest --mypy -m mypy pygdtf/**py
 ```

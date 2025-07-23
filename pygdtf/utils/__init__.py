@@ -22,9 +22,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import copy
 import datetime
 from typing import Any, Dict, List, Optional
-import copy
+
 import pygdtf
 
 
