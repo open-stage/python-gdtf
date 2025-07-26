@@ -1,5 +1,14 @@
 ### Changelog
 
+#### 1.3.0
+
+* This adds new implementation for some parts where missing and removes other
+  for stuff removed from the spec. There should be no breaking changes for
+  version 1.2 GDTF files. Some of the stuff existing in GDTF 1.0/1.1 that has
+  been removed from the GDTF specification and made it to this library (for
+  example visual macros) has been removed but should not affect anyone.
+* Handle and Add missing channels in incorrect definitions
+
 #### 1.2.6
 
 * Make physical\_from/\_to a PhysicalValue object with properties
