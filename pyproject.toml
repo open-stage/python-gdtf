@@ -45,7 +45,6 @@ classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python"
 ]
-dependencies = []
 
 [tool.setuptools]
 packages = ["pygdtf", "pygdtf.utils"]

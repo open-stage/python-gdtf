@@ -6,7 +6,7 @@ GDTF specification as per https://gdtf.eu/gdtf/prologue/introduction/
 
 See source code for documentation. Naming conventions, in general, are
 identical to that on the GDTF, CamelCase is replaced with
-underscore_delimiters.
+underscore\_delimiters.
 
 ## Credits
 
@@ -16,19 +16,16 @@ Page](https://github.com/jackdpage). Friendly forked to
 [vanous](https://github.com/vanous). We continue publishing to pypi under the
 same [pygdtf](https://pypi.org/project/pygdtf/) name with Jack's permission.
 
-Used for example by [BlenderDMX](https://github.com/open-stage/blender-dmx).
+This library is used for example by [BlenderDMX](https://blenderdmx.eu)
+([BlenderDMX on GitHub](https://github.com/open-stage/blender-dmx)).
 
-[Source code](https://github.com/open-stage/python-gdtf)
-
-[PyPi page](https://pypi.org/project/pygdtf/)
+[GitHub Page](https://github.com/open-stage/python-gdtf), [PyPi Page](https://pypi.org/project/pygdtf/)
 
 [![Pytest](https://github.com/open-stage/python-gdtf/actions/workflows/run-tests.yaml/badge.svg)](https://github.com/open-stage/python-gdtf/actions/workflows/run-tests.yaml)
-
 [![Check links in markdown](https://github.com/open-stage/python-gdtf/actions/workflows/check-links.yaml/badge.svg)](https://github.com/open-stage/python-gdtf/actions/workflows/check-links.yaml)
+![GitHub Tag](https://img.shields.io/github/v/tag/open-stage/python-gdtf)
 
-## Important changes
-
-### Version 1.1.0 and 1.2.0
+## Important changes when updating from 1.0
 
 ⚠️  List of DMX Channels provided by dmx\_mode.dmx\_channels is now a complete
 list of all DMX channels calculated by obtaining DMX channels for geometries,
@@ -42,17 +39,22 @@ as\_dict() is now also in dmx\_modes, dmx\_mode, dmx\_channels and so on.
 ⚠️  Many of the .utils package methods have been moved directly to the main part
 of pygdtf. External usage of methods from .utils should not be needed anymore.
 
-See [CHANGELOG](CHANGELOG.md) for details.
+See [CHANGELOG](https://github.com/open-stage/python-gdtf/blob/master/CHANGELOG.md) for details.
+
+## Status
+
+- Reading of most aspects of GDTF 1.2 (DIN SPEC 15800:2022-02) should be covered.
+- Writing is currently not implemented.
 
 ## Installation
 
-- with uv:
+- With uv:
 
 ```bash
 uv add pygdtf
 ```
 
-- with pip
+- With pip
 
 ```bash
 pip install pygdtf
@@ -116,17 +118,6 @@ See [BlenderDMX](https://github.com/open-stage/blender-dmx) and
 [tests](https://github.com/open-stage/python-gdtf/tree/master/tests) for
 reference implementation and usage examples.
 
-## Usage principles
-
-- do not use geometry names for anything related to function of the geometry
-  (yoke, pan, tilt, head), use attached GDTF attributes ("Pan", "Tilt") to know
-  what functions should the geometry perform
-
-## Status
-
-- Many GDTF 1.2 features have been implemented
-- Some GDTF 1.1 features have been kept in
-
 ## Development
 
 PRs appreciated. You can use [uv](https://docs.astral.sh/uv/) to get the
@@ -136,20 +127,32 @@ project setup by running:
 uv sync
 ```
 
-### Typing
-
-- We try to type the main library as well as the utils module, see tests below.
-
 ### Format
 
-- To format, use [black](https://github.com/psf/black) or
-  [ruff](https://docs.astral.sh/ruff/)
+- To format, use [ruff](https://docs.astral.sh/ruff/)
+
+```bash
+uv run ruff format pygdtf/*
+```
+
+### Pre-commit hooks
+
+- You can use the pre-commit hooks
+
+```bash
+uv run pre-commit install
+```
 
 ### Testing
 
-- to test, run: `uv run pytest`
-- to test typing with mypy run pytest:
+- To test, use pytest
 
 ```bash
-uv run pytest --mypy -m mypy pygdtf/**py
+uv run pytest
+```
+
+- To test typing with mypy use:
+
+```bash
+uv run pytest --mypy -m mypy pygdtf/*py
 ```

@@ -5,23 +5,30 @@
 * push to master (via PR)
 * `git tag versionCode`
 * `git push origin versionCode`
+* License headers:
+* Make sure to install/update hawkeye
+* `cargo install hawkeye`
+* Update headers:
+* `hawkeye format`
 
 * Use uv for build and upload:
     - https://docs.astral.sh/uv/
 
+* generate wheel:
 ```bash
 uv build
 ```
-* use `__token__` for username and a token for password
 
-* Test upload to Test pypi with uv:
+* test upload to TestPypi:
+* use \_\_token\_\_ for username and token for password
 
-```bash
-uv publish --publish-url https://test.pypi.org/legacy/ dist/*whl
+``bash
+uv publish -t --publish-url https://test.pypi.org/legacy/ dist/*whl
 ```
 
-* Release to Official pypi with uv:
+* release to official pypi with uv:
+* use \_\_token\_\_ for username and token for password
 
 ```bash
-uv publish --publish-url https://upload.pypi.org/legacy/ dist/*whl
+uv publish -t --publish-url https://upload.pypi.org/legacy/ dist/*whl
 ```
