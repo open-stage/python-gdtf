@@ -156,3 +156,18 @@ uv run pytest
 ```bash
 uv run pytest --mypy -m mypy pygdtf/*py
 ```
+
+## Citation
+
+If you use this library in your research, publication, or software project,
+please cite it as follows:
+
+```bibtex
+@software{pygdtf2025,
+  title        = {pyGDTF: Python Library for General Device Type Format},
+  author       = {{OpenStage}},
+  year         = {2025},
+  version      = {1.3.0},
+  url          = {https://github.com/open-stage/python-gdtf}
+}
+```
