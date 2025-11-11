@@ -42,9 +42,11 @@ def _get_channels_by_geometry(
 
 
 def _get_address_by_break(
-    dmx_breaks: List["pygdtf.Break"] = [], value: int = 1
+    dmx_breaks: List["pygdtf.Break"] = [], value: int = 1, overwrite=False
 ) -> Optional["pygdtf.DmxAddress"]:
     """Return DMX address for a given DMX break"""
+    if overwrite:
+        return dmx_breaks[-1].dmx_offset
     for item in dmx_breaks:
         if item.dmx_break == value:
             return item.dmx_offset
@@ -71,6 +73,7 @@ def _get_channels_for_geometry(
             new_channel = copy.deepcopy(channel)
             new_channel.geometry = geometry.name
             if channel.dmx_break == "Overwrite":
+                channel.overwrite = True
                 if len(geometry.breaks):
                     new_channel.dmx_break = geometry.breaks[
                         -1
@@ -168,7 +171,9 @@ def get_dmx_channels(
 
         if hasattr(geometry, "breaks"):
             # a dmx offset defined in a geometry defines how much this channel is offset from it's actual address
-            dmx_offset = _get_address_by_break(geometry.breaks, channel_break)
+            dmx_offset = _get_address_by_break(
+                geometry.breaks, channel_break, hasattr(channel, "overwrite")
+            )
             if dmx_offset is not None:
                 break_addition = dmx_offset.address - 1  # here is also off by one
                 channel = copy.deepcopy(channel)

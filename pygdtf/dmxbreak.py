@@ -47,3 +47,6 @@ class Break(BaseNode):
 
     def __str__(self):
         return f"Break: {self.dmx_break}, Offset: {self.dmx_offset}"
+
+    def __repr__(self):
+        return f"Break: {self.dmx_break}, Offset: {self.dmx_offset}"
