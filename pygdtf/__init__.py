@@ -38,7 +38,7 @@ from .revisions import *
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -1131,6 +1131,7 @@ class DmxChannel(BaseNode):
         self.initial_function = initial_function
         self.geometry = geometry
         self.name = name
+        self.overwrite = False  # we use this during channels processing, to know if geometry reference "Overwrite" has been set
 
         if logical_channels is not None:
             self.logical_channels = logical_channels

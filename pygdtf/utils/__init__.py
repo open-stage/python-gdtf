@@ -172,7 +172,7 @@ def get_dmx_channels(
         if hasattr(geometry, "breaks"):
             # a dmx offset defined in a geometry defines how much this channel is offset from it's actual address
             dmx_offset = _get_address_by_break(
-                geometry.breaks, channel_break, hasattr(channel, "overwrite")
+                geometry.breaks, channel_break, channel.overwrite
             )
             if dmx_offset is not None:
                 break_addition = dmx_offset.address - 1  # here is also off by one
