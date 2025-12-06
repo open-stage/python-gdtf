@@ -119,6 +119,9 @@ class FixtureType:
         self.description = self._root.get("Description")
         self.fixture_type_id = self._root.get("FixtureTypeID")
         self.thumbnail = self._root.get("Thumbnail", "").encode("utf-8").decode("cp437")
+        self.thumbnail_offset_x = int(self._root.get("ThumbnailOffsetX", 0))
+        self.thumbnail_offset_y = int(self._root.get("ThumbnailOffsetY", 0))
+        self.can_have_children = self._root.get("CanHaveChildren")
         self.thumbnails = Thumbnails(xml_node=self._root, fixture_type=self)
         self.ref_ft = self._root.get("RefFT")
         # For each attribute, we first check for the existence of the collect node
@@ -188,6 +191,17 @@ class FixtureType:
                 # The default color space is sRGB if nothing else is defined
                 self.color_space = ColorSpace(mode=ColorSpaceMode("sRGB"))
 
+            additional_color_spaces_collect = physical_descriptions_node.find(
+                "AdditionalColorSpaces"
+            )
+            if additional_color_spaces_collect is not None:
+                self.additional_color_spaces = [
+                    ColorSpace(xml_node=i)
+                    for i in additional_color_spaces_collect.findall("ColorSpace")
+                ]
+            else:
+                self.additional_color_spaces = []
+
             gamut_collect = physical_descriptions_node.find("Gamuts")
             if gamut_collect is not None:
                 self.gamuts = [
@@ -227,16 +241,21 @@ class FixtureType:
             )
         for model in self.models:
             if self._package is not None:
-                if f"models/gltf/{model.file.name}.glb" in self._package.namelist():
-                    model.file.extension = "glb"
-                    model.file.crc = self._package.getinfo(
-                        f"models/gltf/{model.file.name}.glb"
-                    ).CRC
-                elif f"models/3ds/{model.file.name}.3ds" in self._package.namelist():
-                    model.file.extension = "3ds"
-                    model.file.crc = self._package.getinfo(
-                        f"models/3ds/{model.file.name}.3ds"
-                    ).CRC
+                available_paths = [
+                    ("glb", "default", f"models/gltf/{model.file.name}.glb"),
+                    ("glb", "high", f"models/gltf_high/{model.file.name}.glb"),
+                    ("glb", "low", f"models/gltf_low/{model.file.name}.glb"),
+                    ("3ds", "default", f"models/3ds/{model.file.name}.3ds"),
+                    ("3ds", "high", f"models/3ds_high/{model.file.name}.3ds"),
+                    ("3ds", "low", f"models/3ds_low/{model.file.name}.3ds"),
+                    ("svg", "default", f"models/svg/{model.file.name}.svg"),
+                ]
+                for extension, lod, path in available_paths:
+                    if path in self._package.namelist():
+                        model.file.extension = extension
+                        model.file_lod = lod
+                        model.file.crc = self._package.getinfo(path).CRC
+                        break
 
         self.geometries = Geometries()
         geometry_collect = self._root.find("Geometries")
@@ -341,6 +360,14 @@ class FixtureType:
             )
         else:
             self.revisions = Revisions()
+
+        ftpresets_collect = self._root.find("FTPresets")
+        if ftpresets_collect is not None:
+            self.ft_presets = [
+                FTPreset(xml_node=i) for i in ftpresets_collect.findall("FTPreset")
+            ]
+        else:
+            self.ft_presets = []
 
         self.protocols = []
         protocols_collect = self._root.find("Protocols")
@@ -719,11 +746,13 @@ class MeasurementPoint(BaseNode):
 class ColorSpace(BaseNode):
     def __init__(
         self,
+        name: Optional[str] = None,
         mode: "ColorSpaceMode" = ColorSpaceMode(None),
         definition: Optional["ColorSpaceDefinition"] = None,
         *args,
         **kwargs,
     ):
+        self.name = name
         self.mode = mode
         if definition is not None:
             self.definition = definition
@@ -732,6 +761,7 @@ class ColorSpace(BaseNode):
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
+        self.name = xml_node.attrib.get("Name")
         self.mode = ColorSpaceMode(xml_node.attrib.get("Mode"))
         if str(self.mode) == "Custom":
             self.red = ColorCIE(str_repr=xml_node.attrib.get("Red"))
@@ -869,6 +899,13 @@ class Model(BaseNode):
         height: float = 0,
         primitive_type: "PrimitiveType" = PrimitiveType(None),
         file: Optional["Resource"] = None,
+        file_lod: str = "default",
+        svg_offset_x: float = 0,
+        svg_offset_y: float = 0,
+        svg_side_offset_x: float = 0,
+        svg_side_offset_y: float = 0,
+        svg_front_offset_x: float = 0,
+        svg_front_offset_y: float = 0,
         *args,
         **kwargs,
     ):
@@ -878,6 +915,13 @@ class Model(BaseNode):
         self.height = height
         self.primitive_type = primitive_type
         self.file = file
+        self.file_lod = file_lod
+        self.svg_offset_x = svg_offset_x
+        self.svg_offset_y = svg_offset_y
+        self.svg_side_offset_x = svg_side_offset_x
+        self.svg_side_offset_y = svg_side_offset_y
+        self.svg_front_offset_x = svg_front_offset_x
+        self.svg_front_offset_y = svg_front_offset_y
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
@@ -887,6 +931,12 @@ class Model(BaseNode):
         self.height = float(xml_node.attrib.get("Height", 0))
         self.primitive_type = PrimitiveType(xml_node.attrib.get("PrimitiveType"))
         self.file = Resource(xml_node.attrib.get("File", ""))
+        self.svg_offset_x = float(xml_node.attrib.get("SVGOffsetX", 0))
+        self.svg_offset_y = float(xml_node.attrib.get("SVGOffsetY", 0))
+        self.svg_side_offset_x = float(xml_node.attrib.get("SVGSideOffsetX", 0))
+        self.svg_side_offset_y = float(xml_node.attrib.get("SVGSideOffsetY", 0))
+        self.svg_front_offset_x = float(xml_node.attrib.get("SVGFrontOffsetX", 0))
+        self.svg_front_offset_y = float(xml_node.attrib.get("SVGFrontOffsetY", 0))
 
 
 class DmxChannels(list):
@@ -1604,3 +1654,15 @@ class Relation(BaseNode):
         self.master = NodeLink("DMXMode", xml_node.attrib.get("Master"))
         self.follower = NodeLink("DMXMode", xml_node.attrib.get("Follower"))
         self.type = RelationType(xml_node.attrib.get("Type"))
+
+
+class FTPreset(BaseNode):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
+        # Specification does not define FTPreset structure; presence is noted only
+        return
+
+    def __str__(self):
+        return "FTPreset"
