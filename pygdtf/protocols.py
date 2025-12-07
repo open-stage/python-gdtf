@@ -56,6 +56,16 @@ class Rdm(BaseNode):
             f"{self.manufacturer_id} ({self.device_model_id}) {self.software_versions}"
         )
 
+    def to_xml(self):
+        attrs = {
+            "ManufacturerID": f"{self.manufacturer_id:04X}",
+            "DeviceModelID": f"{self.device_model_id:04X}",
+        }
+        element = Element("FTRDM", attrs)
+        for sw in getattr(self, "software_versions", []):
+            element.append(sw.to_xml())
+        return element
+
 
 class SoftwareVersionId(BaseNode):
     def __init__(
@@ -79,6 +89,15 @@ class SoftwareVersionId(BaseNode):
     def __str__(self):
         return f"{self.value} {self.dmx_personalities}"
 
+    def to_xml(self):
+        attrs = {}
+        if self.value is not None:
+            attrs["Value"] = self.value
+        element = Element("SoftwareVersionID", attrs)
+        for personality in getattr(self, "dmx_personalities", []):
+            element.append(personality.to_xml())
+        return element
+
 
 class DmxPersonality(BaseNode):
     def __init__(
@@ -99,6 +118,14 @@ class DmxPersonality(BaseNode):
     def __str__(self):
         return f"{self.dmx_mode} ({self.value})"
 
+    def to_xml(self):
+        attrs = {}
+        if self.dmx_mode is not None:
+            attrs["DMXMode"] = self.dmx_mode
+        if self.value is not None:
+            attrs["Value"] = self.value
+        return Element("DMXPersonality", attrs)
+
 
 class ArtNet(BaseNode):
     def __init__(
@@ -113,6 +140,12 @@ class ArtNet(BaseNode):
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.maps = [Map(xml_node=i) for i in xml_node.findall("Map")]
+
+    def to_xml(self):
+        element = Element("Art-Net")
+        for m in getattr(self, "maps", []):
+            element.append(m.to_xml())
+        return element
 
 
 class Map(BaseNode):
@@ -134,6 +167,9 @@ class Map(BaseNode):
     def __str__(self):
         return f"{self.key} {self.value}"
 
+    def to_xml(self):
+        return Element("Map", {"Key": str(self.key), "Value": str(self.value)})
+
 
 class Sacn(BaseNode):
     def __init__(
@@ -149,14 +185,23 @@ class Sacn(BaseNode):
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.maps = [Map(xml_node=i) for i in xml_node.findall("Map")]
 
+    def to_xml(self):
+        element = Element("sACN")
+        for m in getattr(self, "maps", []):
+            element.append(m.to_xml())
+        return element
+
 
 class PosiStageNet(BaseNode):
-    pass
+    def to_xml(self):
+        return Element("PosiStageNet")
 
 
 class OpenSoundControl(BaseNode):
-    pass
+    def to_xml(self):
+        return Element("OpenSoundControl")
 
 
 class Citp(BaseNode):
-    pass
+    def to_xml(self):
+        return Element("CITP")

@@ -30,6 +30,8 @@ excludes = [
     "*.xml",
     "*.gdtf",
     "*.lock",
+    "gdtf.xsd",
+
 ]
 
 [git]

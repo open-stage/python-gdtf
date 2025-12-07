@@ -1,5 +1,11 @@
 ### Changelog
 
+#### 1.4.0
+
+* Added initial GDTF writer
+* Add missing elements/attributes
+* Full support for GDTF 1.2
+
 #### 1.3.0
 
 * Adding/improving the implementation for the following:

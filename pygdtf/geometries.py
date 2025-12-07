@@ -23,11 +23,21 @@
 # SOFTWARE.
 
 from typing import List, Optional
+from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
 from .base_node import BaseNode
 from .dmxbreak import *
 from .value import *  # type: ignore
+
+
+def _matrix_to_str(matrix: "Matrix") -> str:
+    if hasattr(matrix, "raw") and matrix.raw:
+        return matrix.raw
+    rows = []
+    for row in matrix.matrix:
+        rows.append(",".join(f"{value:.6f}" for value in row))
+    return "".join("{" + row + "}" for row in rows)
 
 
 class Geometries(list):
@@ -103,55 +113,40 @@ class Geometry(BaseNode):
 
         self.model = xml_node.attrib.get("Model")
         self.position = Matrix(xml_node.attrib.get("Position", 0))
-        for i in xml_node.findall("Geometry"):
-            self.geometries.append(Geometry(xml_node=i, xml_parent=xml_node))
-        for i in xml_node.findall("Axis"):
-            self.geometries.append(GeometryAxis(xml_node=i, xml_parent=xml_node))
-        for i in xml_node.findall("FilterBeam"):
-            self.geometries.append(GeometryFilterBeam(xml_node=i, xml_parent=xml_node))
-        for i in xml_node.findall("FilterColor"):
-            self.geometries.append(GeometryFilterColor(xml_node=i, xml_parent=xml_node))
-        for i in xml_node.findall("FilterGobo"):
-            self.geometries.append(GeometryFilterGobo(xml_node=i, xml_parent=xml_node))
-        for i in xml_node.findall("FilterShaper"):
-            self.geometries.append(
-                GeometryFilterShaper(xml_node=i, xml_parent=xml_node)
-            )
-        for i in xml_node.findall("MediaServerMaster"):
-            self.geometries.append(
-                GeometryMediaServerMaster(xml_node=i, xml_parent=xml_node)
-            )
-        for i in xml_node.findall("MediaServerLayer"):
-            self.geometries.append(
-                GeometryMediaServerLayer(xml_node=i, xml_parent=xml_node)
-            )
-        for i in xml_node.findall("MediaServerCamera"):
-            self.geometries.append(
-                GeometryMediaServerCamera(xml_node=i, xml_parent=xml_node)
-            )
-        for i in xml_node.findall("Inventory"):
-            self.geometries.append(GeometryInventory(xml_node=i, xml_parent=xml_node))
-        for i in xml_node.findall("Beam"):
-            self.geometries.append(GeometryBeam(xml_node=i, xml_parent=xml_node))
-        for i in xml_node.findall("WiringObject"):
-            self.geometries.append(
-                GeometryWiringObject(xml_node=i, xml_parent=xml_node)
-            )
-        for i in xml_node.findall("GeometryReference"):
-            self.geometries.append(GeometryReference(xml_node=i, xml_parent=xml_node))
-        for i in xml_node.findall("Laser"):
-            self.geometries.append(GeometryLaser(xml_node=i, xml_parent=xml_node))
-        for i in xml_node.findall("Structure"):
-            self.geometries.append(GeometryStructure(xml_node=i, xml_parent=xml_node))
-        for i in xml_node.findall("Support"):
-            self.geometries.append(GeometrySupport(xml_node=i, xml_parent=xml_node))
-        for i in xml_node.findall("Magnet"):
-            self.geometries.append(GeometryMagnet(xml_node=i, xml_parent=xml_node))
-        for i in xml_node.findall("Display"):
-            self.geometries.append(GeometryDisplay(xml_node=i, xml_parent=xml_node))
+        for child in list(xml_node):
+            cls = TAG_TO_GEOMETRY_CLASS.get(child.tag)
+            if cls:
+                self.geometries.append(cls(xml_node=child, xml_parent=xml_node))
 
     def __str__(self):
         return f"{self.name} ({self.model})"
+
+    def _tag(self):
+        tag = CLASS_TO_GEOMETRY_TAG.get(type(self))
+        if tag:
+            return tag
+        raise KeyError(
+            f"Geometry class not registered in mapping: {type(self).__name__}"
+        )
+
+    def to_xml(self):
+        attrs = {}
+        if self.name is not None:
+            attrs["Name"] = self.name
+        if self.model is not None:
+            attrs["Model"] = self.model
+        if self.position is not None:
+            attrs["Position"] = _matrix_to_str(self.position)
+
+        element = Element(self._tag(), attrs)
+        for child in getattr(self, "geometries", []):
+            try:
+                element.append(child.to_xml())
+            except NotImplementedError as exc:
+                raise NotImplementedError(
+                    f"Child geometry {type(child).__name__} missing to_xml implementation"
+                ) from exc
+        return element
 
 
 class GeometryAxis(Geometry):
@@ -356,6 +351,31 @@ class GeometryBeam(Geometry):
             "EmitterCollect", xml_node.attrib.get("EmitterSpectrum")
         )
 
+    def to_xml(self):
+        attrs = {}
+        if self.name is not None:
+            attrs["Name"] = self.name
+        if self.model is not None:
+            attrs["Model"] = self.model
+        if self.position is not None:
+            attrs["Position"] = _matrix_to_str(self.position)
+        if self.lamp_type and self.lamp_type.value is not None:
+            attrs["LampType"] = str(self.lamp_type)
+        attrs["PowerConsumption"] = f"{self.power_consumption:.6f}"
+        attrs["LuminousFlux"] = f"{self.luminous_flux:.6f}"
+        attrs["ColorTemperature"] = f"{self.color_temperature:.6f}"
+        attrs["BeamAngle"] = f"{self.beam_angle:.6f}"
+        attrs["FieldAngle"] = f"{self.field_angle:.6f}"
+        attrs["BeamRadius"] = f"{self.beam_radius:.6f}"
+        if self.beam_type and self.beam_type.value is not None:
+            attrs["BeamType"] = str(self.beam_type)
+        attrs["ColorRenderingIndex"] = str(self.color_rendering_index)
+        attrs["ThrowRatio"] = f"{self.throw_ratio:.6f}"
+        attrs["RectangleRatio"] = f"{self.rectangle_ratio:.6f}"
+        if self.emitter_spectrum and self.emitter_spectrum.str_link:
+            attrs["EmitterSpectrum"] = str(self.emitter_spectrum.str_link)
+        return Element("Beam", attrs)
+
 
 class GeometryLaser(Geometry):
     def __init__(
@@ -370,7 +390,7 @@ class GeometryLaser(Geometry):
         scan_angle_pan: float = 0,
         scan_angle_tilt: float = 0,
         scan_speed: float = 0,
-        protocols: List = [],
+        protocols: Optional[List["Protocol"]] = None,
         *args,
         **kwargs,
     ):
@@ -384,7 +404,7 @@ class GeometryLaser(Geometry):
         self.scan_angle_pan = scan_angle_pan
         self.scan_angle_tilt = scan_angle_tilt
         self.scan_speed = scan_speed
-        self.protocols = protocols
+        self.protocols = protocols if protocols is not None else []
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
@@ -400,6 +420,32 @@ class GeometryLaser(Geometry):
         self.scan_angle_tilt = float(xml_node.attrib.get("ScanAngleTilt", 30))
         self.scan_speed = float(xml_node.attrib.get("ScanSpeed", 0))
         self.protocols = [Protocol(xml_node=i) for i in xml_node.findall("Protocol")]
+
+    def to_xml(self):
+        attrs = {}
+        if self.name is not None:
+            attrs["Name"] = self.name
+        if self.model is not None:
+            attrs["Model"] = self.model
+        if self.position is not None:
+            attrs["Position"] = _matrix_to_str(self.position)
+        if self.color_type and self.color_type.value is not None:
+            attrs["ColorType"] = str(self.color_type)
+        attrs["Color"] = f"{self.color:.6f}"
+        attrs["OutputStrength"] = f"{self.output_strength:.6f}"
+        if self.emitter and self.emitter.str_link:
+            attrs["Emitter"] = str(self.emitter.str_link)
+        attrs["BeamDiameter"] = f"{self.beam_diameter:.6f}"
+        attrs["BeamDivergenceMin"] = f"{self.beam_divergence_min:.6f}"
+        attrs["BeamDivergenceMax"] = f"{self.beam_divergence_max:.6f}"
+        attrs["ScanAnglePan"] = f"{self.scan_angle_pan:.6f}"
+        attrs["ScanAngleTilt"] = f"{self.scan_angle_tilt:.6f}"
+        attrs["ScanSpeed"] = f"{self.scan_speed:.6f}"
+
+        element = Element(self._tag(), attrs)
+        for protocol in self.protocols:
+            element.append(protocol.to_xml())
+        return element
 
 
 class Protocol(BaseNode):
@@ -417,6 +463,12 @@ class Protocol(BaseNode):
 
     def __str__(self):
         return f"{self.name}"
+
+    def to_xml(self):
+        attrs = {}
+        if self.name is not None:
+            attrs["Name"] = self.name
+        return Element("Protocol", attrs)
 
 
 class PinPatch(BaseNode):
@@ -439,6 +491,15 @@ class PinPatch(BaseNode):
         )
         self.from_pin = int(xml_node.attrib.get("FromPin", 0))
         self.to_pin = int(xml_node.attrib.get("ToPin", 0))
+
+    def to_xml(self):
+        attrs = {
+            "FromPin": str(self.from_pin),
+            "ToPin": str(self.to_pin),
+        }
+        if self.to_wiring_object and self.to_wiring_object.str_link:
+            attrs["ToWiringObject"] = str(self.to_wiring_object.str_link)
+        return Element("PinPatch", attrs)
 
 
 class GeometryWiringObject(Geometry):
@@ -506,6 +567,43 @@ class GeometryWiringObject(Geometry):
         self.wire_group = xml_node.attrib.get("WireGroup")
         self.pin_patches = [PinPatch(xml_node=i) for i in xml_node.findall("PinPatch")]
 
+    def to_xml(self):
+        attrs = {}
+        if self.name is not None:
+            attrs["Name"] = self.name
+        if self.model is not None:
+            attrs["Model"] = self.model
+        if self.position is not None:
+            attrs["Position"] = _matrix_to_str(self.position)
+        if self.connector_type is not None:
+            attrs["ConnectorType"] = self.connector_type
+        if self.component_type and self.component_type.value is not None:
+            attrs["ComponentType"] = str(self.component_type)
+        if self.signal_type is not None:
+            attrs["SignalType"] = self.signal_type
+        attrs["PinCount"] = str(self.pin_count)
+        attrs["ElectricalPayLoad"] = f"{self.electrical_payload:.6f}"
+        attrs["VoltageRangeMax"] = f"{self.voltage_range_max:.6f}"
+        attrs["VoltageRangeMin"] = f"{self.voltage_range_min:.6f}"
+        attrs["FrequencyRangeMax"] = f"{self.frequency_range_max:.6f}"
+        attrs["FrequencyRangeMin"] = f"{self.frequency_range_min:.6f}"
+        attrs["MaxPayLoad"] = f"{self.max_payload:.6f}"
+        attrs["Voltage"] = f"{self.voltage:.6f}"
+        attrs["SignalLayer"] = str(self.signal_layer)
+        attrs["CosPhi"] = f"{self.cos_phi:.6f}"
+        attrs["FuseCurrent"] = f"{self.fuse_current:.6f}"
+        if self.fuse_rating and self.fuse_rating.value is not None:
+            attrs["FuseRating"] = str(self.fuse_rating)
+        if self.orientation and self.orientation.value is not None:
+            attrs["Orientation"] = str(self.orientation)
+        if self.wire_group is not None:
+            attrs["WireGroup"] = self.wire_group
+
+        element = Element(self._tag(), attrs)
+        for pin_patch in self.pin_patches:
+            element.append(pin_patch.to_xml())
+        return element
+
 
 class GeometryReference(BaseNode):
     def __init__(
@@ -523,6 +621,7 @@ class GeometryReference(BaseNode):
         self.position = position
         self.geometry = geometry
         self.model = model
+        self.breaks: List["Break"] = []
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
@@ -538,3 +637,42 @@ class GeometryReference(BaseNode):
 
     def __str__(self):
         return f"{self.name} ({self.model})"
+
+    def to_xml(self):
+        attrs = {}
+        if self.name is not None:
+            attrs["Name"] = self.name
+        if self.model is not None:
+            attrs["Model"] = self.model
+        if self.position is not None:
+            attrs["Position"] = _matrix_to_str(self.position)
+        if self.geometry is not None:
+            attrs["Geometry"] = self.geometry
+
+        element = Element("GeometryReference", attrs)
+        for br in getattr(self, "breaks", []):
+            element.append(br.to_xml())
+        return element
+
+
+TAG_TO_GEOMETRY_CLASS = {
+    "Geometry": Geometry,
+    "Axis": GeometryAxis,
+    "FilterBeam": GeometryFilterBeam,
+    "FilterColor": GeometryFilterColor,
+    "FilterGobo": GeometryFilterGobo,
+    "FilterShaper": GeometryFilterShaper,
+    "MediaServerMaster": GeometryMediaServerMaster,
+    "MediaServerLayer": GeometryMediaServerLayer,
+    "MediaServerCamera": GeometryMediaServerCamera,
+    "Inventory": GeometryInventory,
+    "Beam": GeometryBeam,
+    "WiringObject": GeometryWiringObject,
+    "GeometryReference": GeometryReference,
+    "Laser": GeometryLaser,
+    "Structure": GeometryStructure,
+    "Support": GeometrySupport,
+    "Magnet": GeometryMagnet,
+    "Display": GeometryDisplay,
+}
+CLASS_TO_GEOMETRY_TAG = {cls: tag for tag, cls in TAG_TO_GEOMETRY_CLASS.items()}

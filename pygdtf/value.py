@@ -216,7 +216,9 @@ class Resource:
         self.crc = crc
 
     def __str__(self):
-        return ".".join([self.name, self.extension])
+        if self.extension:
+            return ".".join([self.name, self.extension])
+        return self.name or ""
 
 
 class DmxAddress:
@@ -329,6 +331,9 @@ class Vector3:
 
 class Matrix:
     def __init__(self, str_repr):
+        self.raw = None
+        if isinstance(str_repr, str):
+            self.raw = str_repr
         if str_repr == "0" or str_repr == 0:
             self.matrix = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
         else:

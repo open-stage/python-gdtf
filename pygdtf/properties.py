@@ -23,6 +23,7 @@
 # SOFTWARE.
 
 from typing import Optional
+from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
 from .base_node import BaseNode
@@ -62,3 +63,19 @@ class Properties(BaseNode):
         weight_tag = xml_node.find("Weight")
         if weight_tag is not None:
             self.weight = float(weight_tag.attrib.get("Value", 0))
+
+    def to_xml(self):
+        element = Element("Properties")
+        ot = ElementTree.SubElement(
+            element,
+            "OperatingTemperature",
+            {
+                "Low": f"{self.operating_temperature_low:.6f}",
+                "High": f"{self.operating_temperature_high:.6f}",
+            },
+        )
+        ElementTree.SubElement(element, "Weight", {"Value": f"{self.weight:.6f}"})
+        ElementTree.SubElement(
+            element, "LegHeight", {"Value": f"{self.leg_height:.6f}"}
+        )
+        return element
