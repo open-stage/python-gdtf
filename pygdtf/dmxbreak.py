@@ -50,3 +50,15 @@ class Break(BaseNode):
 
     def __repr__(self):
         return f"Break: {self.dmx_break}, Offset: {self.dmx_offset}"
+
+    def to_xml(self):
+        # If universe is non-default, include it in the offset; otherwise emit the channel only.
+        if getattr(self.dmx_offset, "universe", 1) != 1:
+            offset = f"{self.dmx_offset.universe}.{self.dmx_offset.address}"
+        else:
+            offset = str(self.dmx_offset.address)
+        attrs = {
+            "DMXOffset": offset,
+            "DMXBreak": str(self.dmx_break),
+        }
+        return Element("Break", attrs)

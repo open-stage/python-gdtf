@@ -24,7 +24,9 @@
 
 import datetime
 import zipfile
-from typing import Dict, List, Optional, Union
+import sys
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Union
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
@@ -38,7 +40,7 @@ from .revisions import *
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.3.1"
+__version__ = "1.4.0-dev0"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -61,7 +63,11 @@ COLOR_SPACE_ANSI = ColorSpaceDefinition(
 )
 
 
-def _find_root(pkg: "zipfile.ZipFile") -> "ElementTree.Element":
+def _dmx_value_str(dmx_value: "DmxValue") -> str:
+    return f"{dmx_value.value}/{dmx_value.byte_count}"
+
+
+def _find_root(pkg: "zipfile.ZipFile") -> "Element":
     """Given a GDTF zip archive, find the FixtureType of the corresponding
     description.xml file."""
 
@@ -92,6 +98,8 @@ class FixtureType:
     def __init__(self, path=None, dsc_file: Optional[str] = None):
         self._package = None
         self._root = None
+        self.path = path
+        self.dsc_file = dsc_file
         if path is not None:
             self._package = zipfile.ZipFile(path, "r")
         if self._package is not None:
@@ -260,78 +268,12 @@ class FixtureType:
         self.geometries = Geometries()
         geometry_collect = self._root.find("Geometries")
         if geometry_collect is not None:
-            for i in geometry_collect.findall("Geometry"):
-                self.geometries.append(
-                    Geometry(xml_node=i, xml_parent=geometry_collect)
-                )
-            for i in geometry_collect.findall("Axis"):
-                self.geometries.append(
-                    GeometryAxis(xml_node=i, xml_parent=geometry_collect)
-                )
-            for i in geometry_collect.findall("FilterBeam"):
-                self.geometries.append(
-                    GeometryFilterBeam(xml_node=i, xml_parent=geometry_collect)
-                )
-            for i in geometry_collect.findall("FilterColor"):
-                self.geometries.append(
-                    GeometryFilterColor(xml_node=i, xml_parent=geometry_collect)
-                )
-            for i in geometry_collect.findall("FilterGobo"):
-                self.geometries.append(
-                    GeometryFilterGobo(xml_node=i, xml_parent=geometry_collect)
-                )
-            for i in geometry_collect.findall("FilterShaper"):
-                self.geometries.append(
-                    GeometryFilterShaper(xml_node=i, xml_parent=geometry_collect)
-                )
-            for i in geometry_collect.findall("MediaServerMaster"):
-                self.geometries.append(
-                    GeometryMediaServerMaster(xml_node=i, xml_parent=geometry_collect)
-                )
-            for i in geometry_collect.findall("MediaServerLayer"):
-                self.geometries.append(
-                    GeometryMediaServerLayer(xml_node=i, xml_parent=geometry_collect)
-                )
-            for i in geometry_collect.findall("MediaServerCamera"):
-                self.geometries.append(
-                    GeometryMediaServerCamera(xml_node=i, xml_parent=geometry_collect)
-                )
-            for i in geometry_collect.findall("Inventory"):
-                self.geometries.append(
-                    GeometryInventory(xml_node=i, xml_parent=geometry_collect)
-                )
-            for i in geometry_collect.findall("Beam"):
-                self.geometries.append(
-                    GeometryBeam(xml_node=i, xml_parent=geometry_collect)
-                )
-            for i in geometry_collect.findall("WiringObject"):
-                self.geometries.append(
-                    GeometryWiringObject(xml_node=i, xml_parent=geometry_collect)
-                )
-            for i in geometry_collect.findall("GeometryReference"):
-                self.geometries.append(
-                    GeometryReference(xml_node=i, xml_parent=geometry_collect)
-                )
-            for i in geometry_collect.findall("Laser"):
-                self.geometries.append(
-                    GeometryLaser(xml_node=i, xml_parent=geometry_collect)
-                )
-            for i in geometry_collect.findall("Support"):
-                self.geometries.append(
-                    GeometrySupport(xml_node=i, xml_parent=geometry_collect)
-                )
-            for i in geometry_collect.findall("Structure"):
-                self.geometries.append(
-                    GeometryStructure(xml_node=i, xml_parent=geometry_collect)
-                )
-            for i in geometry_collect.findall("Display"):
-                self.geometries.append(
-                    GeometryDisplay(xml_node=i, xml_parent=geometry_collect)
-                )
-            for i in geometry_collect.findall("Magnet"):
-                self.geometries.append(
-                    GeometryMagnet(xml_node=i, xml_parent=geometry_collect)
-                )
+            for geometry_node in list(geometry_collect):
+                cls = TAG_TO_GEOMETRY_CLASS.get(geometry_node.tag)
+                if cls:
+                    self.geometries.append(
+                        cls(xml_node=geometry_node, xml_parent=geometry_collect)
+                    )
 
         dmx_mode_collect = self._root.find("DMXModes")
         if dmx_mode_collect is not None:
@@ -385,6 +327,144 @@ class FixtureType:
             for i in protocols_collect.findall("CITP"):
                 self.protocols.append(Citp(xml_node=i))
 
+    def _attributes_to_dict(self):
+        return {
+            "Name": self.name or "",
+            "ShortName": self.short_name or "",
+            "LongName": self.long_name or "",
+            "Manufacturer": self.manufacturer or "",
+            "Description": self.description or "",
+            "FixtureTypeID": self.fixture_type_id or "",
+            "Thumbnail": (self.thumbnail or "").encode("utf-8").decode("cp437"),
+            "ThumbnailOffsetX": str(self.thumbnail_offset_x),
+            "ThumbnailOffsetY": str(self.thumbnail_offset_y),
+            "CanHaveChildren": self.can_have_children or "No",
+            "RefFT": self.ref_ft or "",
+        }
+
+    def to_xml(self) -> Element:
+        gdtf_root = Element("GDTF", DataVersion=str(self.data_version))
+        fixture_el = ElementTree.SubElement(
+            gdtf_root, "FixtureType", **self._attributes_to_dict()
+        )
+
+        # AttributeDefinitions
+        attr_defs = ElementTree.SubElement(fixture_el, "AttributeDefinitions")
+        if getattr(self, "activation_groups", None):
+            ag_el = ElementTree.SubElement(attr_defs, "ActivationGroups")
+            for ag in self.activation_groups:
+                ag_el.append(ag.to_xml())
+        if getattr(self, "feature_groups", None):
+            fg_el = ElementTree.SubElement(attr_defs, "FeatureGroups")
+            for fg in self.feature_groups:
+                fg_el.append(fg.to_xml())
+        if getattr(self, "attributes", None):
+            attrs_el = ElementTree.SubElement(attr_defs, "Attributes")
+            for attr in self.attributes:
+                attrs_el.append(attr.to_xml())
+
+        # Wheels
+        wheels_el = ElementTree.SubElement(fixture_el, "Wheels")
+        for wheel in getattr(self, "wheels", []):
+            wheels_el.append(wheel.to_xml())
+
+        # PhysicalDescriptions
+        phys_el = ElementTree.SubElement(fixture_el, "PhysicalDescriptions")
+        # ColorSpace first
+        if getattr(self, "color_space", None):
+            phys_el.append(self.color_space.to_xml())
+        else:
+            ElementTree.SubElement(phys_el, "ColorSpace")
+
+        # AdditionalColorSpaces
+        add_cs_el = ElementTree.SubElement(phys_el, "AdditionalColorSpaces")
+        if getattr(self, "additional_color_spaces", None):
+            for cs in self.additional_color_spaces:
+                add_cs_el.append(cs.to_xml())
+
+        # Gamuts
+        gamuts_el = ElementTree.SubElement(phys_el, "Gamuts")
+        if getattr(self, "gamuts", None):
+            for gamut in self.gamuts:
+                gamuts_el.append(gamut.to_xml())
+
+        # Filters
+        if getattr(self, "filters", None):
+            filters_el = ElementTree.SubElement(phys_el, "Filters")
+            for filt in self.filters:
+                filters_el.append(filt.to_xml())
+        else:
+            ElementTree.SubElement(phys_el, "Filters")
+
+        # Emitters
+        if getattr(self, "emitters", None):
+            emitters_el = ElementTree.SubElement(phys_el, "Emitters")
+            for emitter in self.emitters:
+                emitters_el.append(emitter.to_xml())
+        else:
+            ElementTree.SubElement(phys_el, "Emitters")
+
+        # DMXProfiles
+        dmx_prof_el = ElementTree.SubElement(phys_el, "DMXProfiles")
+        if getattr(self, "dmx_profiles", None):
+            for profile in self.dmx_profiles:
+                dmx_prof_el.append(profile.to_xml())
+
+        # CRIs
+        cri_el = ElementTree.SubElement(phys_el, "CRIs")
+        if getattr(self, "cri_groups", None):
+            for cri in self.cri_groups:
+                cri_el.append(cri.to_xml())
+
+        # Keep Connectors placeholder for compatibility
+        ElementTree.SubElement(phys_el, "Connectors")
+
+        if getattr(self, "properties", None):
+            if hasattr(self.properties, "to_xml"):
+                props_el = self.properties.to_xml()
+                phys_el.append(props_el)
+        else:
+            ElementTree.SubElement(phys_el, "Properties")
+        if getattr(self, "models", None):
+            models_el = ElementTree.SubElement(fixture_el, "Models")
+            for model in self.models:
+                models_el.append(model.to_xml())
+
+        if getattr(self, "geometries", None):
+            geos_el = ElementTree.SubElement(fixture_el, "Geometries")
+            for geo in self.geometries:
+                geos_el.append(geo.to_xml())
+
+        # DMXModes
+        dmx_modes_el = ElementTree.SubElement(fixture_el, "DMXModes")
+        for mode in getattr(self, "dmx_modes", []):
+            dmx_modes_el.append(mode.to_xml())
+
+        # Append other untouched sections (Revisions, FTPresets, Protocols, etc.)
+        # Revisions
+        revisions_el = ElementTree.SubElement(fixture_el, "Revisions")
+        for rev in getattr(self, "revisions", []):
+            if hasattr(rev, "to_xml"):
+                revisions_el.append(rev.to_xml())
+            else:
+                ElementTree.SubElement(revisions_el, "Revision")
+
+        # FTPresets
+        ftpresets_el = ElementTree.SubElement(fixture_el, "FTPresets")
+        for preset in getattr(self, "ft_presets", []):
+            if hasattr(preset, "to_xml"):
+                ftpresets_el.append(preset.to_xml())
+            else:
+                ElementTree.SubElement(ftpresets_el, "FTPreset")
+
+        # Protocols
+        protocols_el = ElementTree.SubElement(fixture_el, "Protocols")
+        for protocol in getattr(self, "protocols", []):
+            if hasattr(protocol, "to_xml"):
+                protocols_el.append(protocol.to_xml())
+
+        return gdtf_root
+
 
 class Thumbnails(BaseNode):
     def __init__(
@@ -428,6 +508,9 @@ class Thumbnails(BaseNode):
         self.png = Resource(name=name)
         self.svg = Resource(name=name)
 
+    def to_xml(self):
+        return Element("Thumbnails", Thumbnail=self.png.name if self.png else "")
+
 
 class ActivationGroup(BaseNode):
     def __init__(self, name: Optional[str] = None, *args, **kwargs):
@@ -436,6 +519,12 @@ class ActivationGroup(BaseNode):
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.name = xml_node.attrib.get("Name")
+
+    def to_xml(self):
+        attrs = {}
+        if self.name:
+            attrs["Name"] = self.name
+        return Element("ActivationGroup", attrs)
 
 
 class FeatureGroup(BaseNode):
@@ -460,6 +549,17 @@ class FeatureGroup(BaseNode):
         self.pretty = xml_node.attrib.get("Pretty")
         self.features = [Feature(xml_node=i) for i in xml_node.findall("Feature")]
 
+    def to_xml(self):
+        attrs = {}
+        if self.name:
+            attrs["Name"] = self.name
+        if self.pretty:
+            attrs["Pretty"] = self.pretty
+        element = Element("FeatureGroup", attrs)
+        for feature in self.features:
+            element.append(feature.to_xml())
+        return element
+
 
 class Feature(BaseNode):
     def __init__(self, name: Optional[str] = None, *args, **kwargs):
@@ -468,6 +568,12 @@ class Feature(BaseNode):
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.name = xml_node.attrib.get("Name")
+
+    def to_xml(self):
+        attrs = {}
+        if self.name:
+            attrs["Name"] = self.name
+        return Element("Feature", attrs)
 
 
 class Attribute(BaseNode):
@@ -507,10 +613,32 @@ class Attribute(BaseNode):
             "Attribute", xml_node.attrib.get("MainAttribute")
         )
         self.physical_unit = PhysicalUnit(xml_node.attrib.get("PhysicalUnit"))
-        self.color = ColorCIE(str_repr=xml_node.attrib.get("Color"))
+        color_str = xml_node.attrib.get("Color")
+        self.color = ColorCIE(str_repr=color_str) if color_str else None
         self.subphysical_units = [
             SubPhysicalUnit(xml_node=i) for i in xml_node.findall("SubPhysicalUnit")
         ]
+
+    def to_xml(self):
+        attrs = {}
+        if self.name:
+            attrs["Name"] = self.name
+        if self.pretty:
+            attrs["Pretty"] = self.pretty
+        if self.activation_group and self.activation_group.str_link:
+            attrs["ActivationGroup"] = str(self.activation_group.str_link)
+        if self.feature and self.feature.str_link:
+            attrs["Feature"] = str(self.feature.str_link)
+        if self.main_attribute and self.main_attribute.str_link:
+            attrs["MainAttribute"] = str(self.main_attribute.str_link)
+        if self.physical_unit:
+            attrs["PhysicalUnit"] = str(self.physical_unit)
+        if self.color:
+            attrs["Color"] = str(self.color)
+        element = Element("Attribute", attrs)
+        for spu in self.subphysical_units:
+            element.append(spu.to_xml())
+        return element
 
 
 class SubPhysicalUnit(BaseNode):
@@ -541,6 +669,15 @@ class SubPhysicalUnit(BaseNode):
         self.physical_from = float(xml_node.attrib.get("PhysicalFrom", 0.0))
         self.physical_to = float(xml_node.attrib.get("PhysicalTo", 1.0))
 
+    def to_xml(self):
+        attrs = {
+            "Type": str(self.type),
+            "PhysicalUnit": str(self.physical_unit),
+            "PhysicalFrom": str(self.physical_from),
+            "PhysicalTo": str(self.physical_to),
+        }
+        return Element("SubPhysicalUnit", attrs)
+
 
 class Wheel(BaseNode):
     def __init__(
@@ -560,6 +697,14 @@ class Wheel(BaseNode):
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.name = xml_node.attrib.get("Name")
         self.wheel_slots = [WheelSlot(xml_node=i) for i in xml_node.findall("Slot")]
+
+    def to_xml(self):
+        element = Element("Wheel")
+        if self.name is not None:
+            element.set("Name", str(self.name))
+        for slot in self.wheel_slots:
+            element.append(slot.to_xml())
+        return element
 
 
 class WheelSlot(BaseNode):
@@ -587,7 +732,8 @@ class WheelSlot(BaseNode):
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.name = xml_node.attrib.get("Name")
-        self.color = ColorCIE(str_repr=xml_node.attrib.get("Color"))
+        color_str = xml_node.attrib.get("Color")
+        self.color = ColorCIE(str_repr=color_str) if color_str else None
         self.filter = NodeLink("FilterCollect", xml_node.attrib.get("Filter"))
         self.media_file_name = Resource(
             name=xml_node.attrib.get("MediaFileName", ""), extension="png"
@@ -596,6 +742,24 @@ class WheelSlot(BaseNode):
         animation_system_node = xml_node.find("AnimationSystem")
         if animation_system_node is not None:
             self.animation_system = AnimationSystem(xml_node=animation_system_node)
+
+    def to_xml(self):
+        attrs = {}
+        if self.name is not None:
+            attrs["Name"] = str(self.name)
+        if self.color is not None:
+            attrs["Color"] = str(self.color)
+        if self.filter is not None and self.filter.str_link is not None:
+            attrs["Filter"] = str(self.filter.str_link)
+        if self.media_file_name is not None and self.media_file_name.name is not None:
+            attrs["MediaFileName"] = str(self.media_file_name)
+
+        element = Element("Slot", attrs)
+        for facet in self.facets:
+            element.append(facet.to_xml())
+        if self.animation_system is not None:
+            element.append(self.animation_system.to_xml())
+        return element
 
 
 class PrismFacet(BaseNode):
@@ -611,8 +775,18 @@ class PrismFacet(BaseNode):
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
-        self.color = ColorCIE(str_repr=xml_node.attrib.get("Color"))
+        color_str = xml_node.attrib.get("Color")
+        self.color = ColorCIE(str_repr=color_str) if color_str else None
         self.rotation = Rotation(str_repr=xml_node.attrib.get("Rotation"))
+
+    def to_xml(self):
+        attrs = {}
+        if self.color is not None:
+            attrs["Color"] = str(self.color)
+        if self.rotation is not None:
+            flat_rotation = [str(val) for row in self.rotation.matrix for val in row]
+            attrs["Rotation"] = ",".join(flat_rotation)
+        return Element("Facet", attrs)
 
 
 class AnimationSystem(BaseNode):
@@ -648,6 +822,18 @@ class AnimationSystem(BaseNode):
         if radius_str:
             self.radius = float(radius_str)
 
+    def to_xml(self):
+        attrs = {}
+        if self.p1:
+            attrs["P1"] = ",".join(str(v) for v in self.p1)
+        if self.p2:
+            attrs["P2"] = ",".join(str(v) for v in self.p2)
+        if self.p3:
+            attrs["P3"] = ",".join(str(v) for v in self.p3)
+        if self.radius:
+            attrs["Radius"] = str(self.radius)
+        return Element("AnimationSystem", attrs)
+
 
 class Emitter(BaseNode):
     def __init__(
@@ -674,6 +860,22 @@ class Emitter(BaseNode):
             Measurement(xml_node=i) for i in xml_node.findall("Measurement")
         ]
 
+    def to_xml(self):
+        attrs = {}
+        if self.name is not None:
+            attrs["Name"] = self.name
+        if self.color is not None:
+            # Keep original formatting precision
+            attrs["Color"] = f"{self.color.x:.6f},{self.color.y:.6f},{self.color.Y:.6f}"
+        if self.dominant_wave_length is not None:
+            attrs["DominantWaveLength"] = f"{self.dominant_wave_length:.6f}"
+        if self.diode_part is not None:
+            attrs["DiodePart"] = self.diode_part
+        element = Element("Emitter", attrs)
+        for measurement in getattr(self, "measurements", []):
+            element.append(measurement.to_xml())
+        return element
+
 
 class Filter(BaseNode):
     def __init__(
@@ -699,6 +901,17 @@ class Filter(BaseNode):
             Measurement(xml_node=i) for i in xml_node.findall("Measurement")
         ]
 
+    def to_xml(self):
+        attrs = {}
+        if self.name is not None:
+            attrs["Name"] = self.name
+        if self.color is not None:
+            attrs["Color"] = f"{self.color.x:.6f},{self.color.y:.6f},{self.color.Y:.6f}"
+        element = Element("Filter", attrs)
+        for measurement in getattr(self, "measurements", []):
+            element.append(measurement.to_xml())
+        return element
+
 
 class Measurement(BaseNode):
     def __init__(
@@ -714,6 +927,7 @@ class Measurement(BaseNode):
         self.luminous_intensity = luminous_intensity
         self.transmission = transmission
         self.interpolation_to = interpolation_to
+        self._attr_keys: set = set()
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
@@ -724,6 +938,24 @@ class Measurement(BaseNode):
         self.measurement_points = [
             MeasurementPoint(xml_node=i) for i in xml_node.findall("MeasurementPoint")
         ]
+        self._attr_keys = set(xml_node.attrib.keys())
+
+    def to_xml(self):
+        attrs = {}
+        if self.physical is not None:
+            attrs["Physical"] = f"{self.physical:.6f}"
+        if self.luminous_intensity is not None:
+            attrs["LuminousIntensity"] = f"{self.luminous_intensity:.6f}"
+        if self.transmission is not None and (
+            "Transmission" in self._attr_keys or self.transmission != 0
+        ):
+            attrs["Transmission"] = f"{self.transmission:.6f}"
+        if self.interpolation_to and self.interpolation_to.value is not None:
+            attrs["InterpolationTo"] = str(self.interpolation_to.value)
+        element = Element("Measurement", attrs)
+        for mp in getattr(self, "measurement_points", []):
+            element.append(mp.to_xml())
+        return element
 
 
 class MeasurementPoint(BaseNode):
@@ -741,6 +973,14 @@ class MeasurementPoint(BaseNode):
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.wave_length = float(xml_node.attrib.get("WaveLength", 0))
         self.energy = float(xml_node.attrib.get("Energy", 0))
+
+    def to_xml(self):
+        attrs = {}
+        if self.wave_length is not None:
+            attrs["WaveLength"] = str(self.wave_length)
+        if self.energy is not None:
+            attrs["Energy"] = str(self.energy)
+        return Element("MeasurementPoint", attrs)
 
 
 class ColorSpace(BaseNode):
@@ -783,6 +1023,24 @@ class ColorSpace(BaseNode):
         elif str(self.mode) == "ANSI":
             self.definition = COLOR_SPACE_ANSI
 
+    def to_xml(self):
+        attrs = {}
+        if self.name is not None:
+            attrs["Name"] = self.name
+        if self.mode is not None and self.mode.value is not None:
+            attrs["Mode"] = str(self.mode)
+        element = Element("ColorSpace", attrs)
+        if str(self.mode) == "Custom":
+            if hasattr(self, "red"):
+                element.set("Red", str(self.red))
+            if hasattr(self, "green"):
+                element.set("Green", str(self.green))
+            if hasattr(self, "blue"):
+                element.set("Blue", str(self.blue))
+            if hasattr(self, "white_point"):
+                element.set("WhitePoint", str(self.white_point))
+        return element
+
 
 class Point(BaseNode):
     def __init__(
@@ -809,6 +1067,16 @@ class Point(BaseNode):
         self.cfc2 = float(xml_node.attrib.get("CFC2", 0.0))
         self.cfc3 = float(xml_node.attrib.get("CFC3", 0.0))
 
+    def to_xml(self):
+        attrs = {
+            "DMXPercentage": str(self.dmx_percentage),
+            "CFC0": str(self.cfc0),
+            "CFC1": str(self.cfc1),
+            "CFC2": str(self.cfc2),
+            "CFC3": str(self.cfc3),
+        }
+        return Element("Point", attrs)
+
 
 class DmxProfile(BaseNode):
     def __init__(
@@ -825,6 +1093,15 @@ class DmxProfile(BaseNode):
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.name = xml_node.attrib.get("Name")
         self.points = [Point(xml_node=i) for i in xml_node.findall("Point")]
+
+    def to_xml(self):
+        attrs = {}
+        if self.name is not None:
+            attrs["Name"] = self.name
+        element = Element("DMXProfile", attrs)
+        for point in getattr(self, "points", []):
+            element.append(point.to_xml())
+        return element
 
 
 class Gamut(BaseNode):
@@ -847,6 +1124,14 @@ class Gamut(BaseNode):
             for p in points_arr:
                 self.points.append(ColorCIE(str_repr=p))
 
+    def to_xml(self):
+        attrs = {}
+        if self.name is not None:
+            attrs["Name"] = self.name
+        if self.points:
+            attrs["Points"] = ";".join(str(p) for p in self.points)
+        return Element("Gamut", attrs)
+
 
 class CriGroup(BaseNode):
     def __init__(
@@ -867,6 +1152,13 @@ class CriGroup(BaseNode):
         self.color_temperature = float(xml_node.attrib.get("ColorTemperature", 6000))
         self.cris = [Cri(xml_node=i) for i in xml_node.findall("CRI")]
 
+    def to_xml(self):
+        attrs = {"ColorTemperature": str(self.color_temperature)}
+        element = Element("CRIGroup", attrs)
+        for cri in getattr(self, "cris", []):
+            element.append(cri.to_xml())
+        return element
+
 
 class Cri(BaseNode):
     def __init__(
@@ -879,6 +1171,13 @@ class Cri(BaseNode):
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.ces = Ces(xml_node.attrib.get("CES"))
         self.color_temperature = int(xml_node.attrib.get("ColorTemperature", 100))
+
+    def to_xml(self):
+        attrs = {}
+        if self.ces is not None and self.ces.value is not None:
+            attrs["CES"] = str(self.ces.value)
+        attrs["ColorTemperature"] = str(self.color_temperature)
+        return Element("CRI", attrs)
 
 
 class Models(list):
@@ -922,6 +1221,7 @@ class Model(BaseNode):
         self.svg_side_offset_y = svg_side_offset_y
         self.svg_front_offset_x = svg_front_offset_x
         self.svg_front_offset_y = svg_front_offset_y
+        self.file_attr: Optional[str] = None
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
@@ -930,13 +1230,31 @@ class Model(BaseNode):
         self.width = float(xml_node.attrib.get("Width", 0))
         self.height = float(xml_node.attrib.get("Height", 0))
         self.primitive_type = PrimitiveType(xml_node.attrib.get("PrimitiveType"))
-        self.file = Resource(xml_node.attrib.get("File", ""))
+        self.file_attr = xml_node.attrib.get("File", "")
+        self.file = Resource(self.file_attr)
         self.svg_offset_x = float(xml_node.attrib.get("SVGOffsetX", 0))
         self.svg_offset_y = float(xml_node.attrib.get("SVGOffsetY", 0))
         self.svg_side_offset_x = float(xml_node.attrib.get("SVGSideOffsetX", 0))
         self.svg_side_offset_y = float(xml_node.attrib.get("SVGSideOffsetY", 0))
         self.svg_front_offset_x = float(xml_node.attrib.get("SVGFrontOffsetX", 0))
         self.svg_front_offset_y = float(xml_node.attrib.get("SVGFrontOffsetY", 0))
+
+    def to_xml(self):
+        attrs = {
+            "Name": self.name or "",
+            "Length": f"{self.length:.6f}",
+            "Width": f"{self.width:.6f}",
+            "Height": f"{self.height:.6f}",
+            "PrimitiveType": str(self.primitive_type),
+            "File": self.file_attr if self.file_attr is not None else str(self.file),
+            "SVGOffsetX": f"{self.svg_offset_x:.6f}",
+            "SVGOffsetY": f"{self.svg_offset_y:.6f}",
+            "SVGSideOffsetX": f"{self.svg_side_offset_x:.6f}",
+            "SVGSideOffsetY": f"{self.svg_side_offset_y:.6f}",
+            "SVGFrontOffsetX": f"{self.svg_front_offset_x:.6f}",
+            "SVGFrontOffsetY": f"{self.svg_front_offset_y:.6f}",
+        }
+        return Element("Model", attrs)
 
 
 class DmxChannels(list):
@@ -1155,13 +1473,42 @@ class DmxMode(BaseNode):
     def __repr__(self):
         return f"{self.name}: {self.dmx_channels_count}ch"
 
+    def to_xml(self):
+        attrs = {}
+        if self.name is not None:
+            attrs["Name"] = self.name
+        if self.description is not None:
+            attrs["Description"] = self.description
+        if self.geometry is not None:
+            attrs["Geometry"] = self.geometry
+        element = Element("DMXMode", attrs)
+
+        dmx_channels_el = ElementTree.SubElement(element, "DMXChannels")
+        channels_source = getattr(self, "_dmx_channels", []) or list(
+            getattr(self, "dmx_channels", [])
+        )
+        for channel in channels_source:
+            dmx_channels_el.append(channel.to_xml())
+
+        if getattr(self, "relations", None) is not None:
+            relations_el = ElementTree.SubElement(element, "Relations")
+            for relation in self.relations:
+                relations_el.append(relation.to_xml())
+
+        if getattr(self, "ft_macros", None) is not None:
+            macros_el = ElementTree.SubElement(element, "FTMacros")
+            for macro in self.ft_macros:
+                macros_el.append(macro.to_xml())
+
+        return element
+
 
 class DmxChannel(BaseNode):
     def __init__(
         self,
         dmx_break: Union[int, str] = 1,
         offset: Optional[List[int]] = None,
-        default: "DmxValue" = DmxValue("0/1"),
+        default: Optional["DmxValue"] = DmxValue("0/1"),
         attribute: Optional["NodeLink"] = None,
         # ^^^ this is technically not correct but it's a shortcut to an attribute
         # of the LogicalChannel of the Initial function
@@ -1175,13 +1522,16 @@ class DmxChannel(BaseNode):
     ):
         self.dmx_break = dmx_break
         self.offset = offset
-        self.default = default
+        self.default: Optional[DmxValue] = default
         self.attribute = attribute
         self.highlight = highlight
         self.initial_function = initial_function
         self.geometry = geometry
         self.name = name
         self.overwrite = False  # we use this during channels processing, to know if geometry reference "Overwrite" has been set
+        self._has_default_attr = default is not None
+        self._has_highlight_attr = False
+        self._highlight_raw: Optional[str] = None
 
         if logical_channels is not None:
             self.logical_channels = logical_channels
@@ -1210,15 +1560,21 @@ class DmxChannel(BaseNode):
             ]
 
         # obsoleted by initial function in GDTF 1.2
-        self.default = DmxValue(xml_node.attrib.get("Default", "0/1"))
+        default_attr = xml_node.attrib.get("Default")
+        if default_attr is not None:
+            self.default = DmxValue(default_attr)
+            self._has_default_attr = True
+        else:
+            self.default = None
+            self._has_default_attr = False
 
         highlight_node = xml_node.attrib.get("Highlight")
+        self._highlight_raw = highlight_node
+        self._has_highlight_attr = highlight_node is not None
         if highlight_node is not None:
-            highlight_value = xml_node.attrib.get("Highlight", "0/1")
-
-            if highlight_value.lower() != "none":
+            if highlight_node.lower() != "none":
                 # None is a valid value for Highlight
-                self.highlight = DmxValue(highlight_value)
+                self.highlight = DmxValue(highlight_node)
 
         self.geometry = xml_node.attrib.get("Geometry")
         self.logical_channels = [
@@ -1357,6 +1713,31 @@ class DmxChannel(BaseNode):
                 )
         return dicts_list
 
+    def to_xml(self):
+        attrs = {}
+        if isinstance(self.dmx_break, int):
+            attrs["DMXBreak"] = str(self.dmx_break)
+        elif isinstance(self.dmx_break, str):
+            attrs["DMXBreak"] = self.dmx_break
+        if self.offset is not None:
+            attrs["Offset"] = ",".join(str(i) for i in self.offset)
+        if self._has_default_attr and self.default is not None:
+            attrs["Default"] = _dmx_value_str(self.default)
+        if self._has_highlight_attr:
+            if self.highlight is not None:
+                attrs["Highlight"] = _dmx_value_str(self.highlight)
+            else:
+                attrs["Highlight"] = "None"
+        if self.geometry:
+            attrs["Geometry"] = self.geometry
+        if self.initial_function and self.initial_function.str_link:
+            attrs["InitialFunction"] = str(self.initial_function.str_link)
+
+        element = Element("DMXChannel", attrs)
+        for logical_channel in self.logical_channels:
+            element.append(logical_channel.to_xml())
+        return element
+
 
 class LogicalChannel(BaseNode):
     def __init__(
@@ -1418,6 +1799,24 @@ class LogicalChannel(BaseNode):
                 for channel_function in self.channel_functions
             ],
         }
+
+    def to_xml(self):
+        attrs = {}
+        if self.attribute and self.attribute.str_link:
+            attrs["Attribute"] = str(self.attribute.str_link)
+        if self.snap and self.snap.value is not None:
+            attrs["Snap"] = str(self.snap.value)
+        if self.master and self.master.value is not None:
+            attrs["Master"] = str(self.master.value)
+        if self.mib_fade is not None:
+            attrs["MibFade"] = f"{self.mib_fade:.6f}"
+        if self.dmx_change_time_limit is not None:
+            attrs["DMXChangeTimeLimit"] = f"{self.dmx_change_time_limit:.6f}"
+
+        element = Element("LogicalChannel", attrs)
+        for channel_function in self.channel_functions:
+            element.append(channel_function.to_xml())
+        return element
 
 
 class ChannelFunction(BaseNode):
@@ -1482,6 +1881,7 @@ class ChannelFunction(BaseNode):
             self.sub_channel_sets = sub_channel_sets
         else:
             self.sub_channel_sets = []
+        self._attr_keys: set = set()
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
@@ -1530,6 +1930,7 @@ class ChannelFunction(BaseNode):
         self.sub_channel_sets = [
             SubChannelSet(xml_node=i) for i in xml_node.findall("SubChannelSet")
         ]
+        self._attr_keys = set(xml_node.attrib.keys())
 
     def __str__(self):
         return f"{self.name}, {self.attribute.str_link}"
@@ -1554,6 +1955,99 @@ class ChannelFunction(BaseNode):
             #    sub_channel_set.as_dict() for sub_channel_set in self.sub_channel_sets
             # ],
         }
+
+    def to_xml(self):
+        attrs = {}
+        if self.name is not None or "Name" in self._attr_keys:
+            attrs["Name"] = self.name or ""
+        if self.attribute and self.attribute.str_link:
+            attrs["Attribute"] = str(self.attribute.str_link)
+        if (
+            self.original_attribute is not None
+            or "OriginalAttribute" in self._attr_keys
+        ):
+            attrs["OriginalAttribute"] = self.original_attribute or ""
+        if self.dmx_from:
+            attrs["DMXFrom"] = _dmx_value_str(self.dmx_from)
+        if self.default and (
+            "Default" in self._attr_keys
+            or self.default.value != 0
+            or self.default.byte_count != 1
+        ):
+            attrs["Default"] = _dmx_value_str(self.default)
+        if (
+            self.physical_from is not None
+            and self.physical_from.value is not None
+            and (
+                "PhysicalFrom" in self._attr_keys
+                or (not self._attr_keys and self.physical_from.value is not None)
+            )
+        ):
+            attrs["PhysicalFrom"] = f"{self.physical_from.value:.6f}"
+        if (
+            self.physical_to is not None
+            and self.physical_to.value is not None
+            and (
+                "PhysicalTo" in self._attr_keys
+                or (not self._attr_keys and self.physical_to.value is not None)
+            )
+        ):
+            attrs["PhysicalTo"] = f"{self.physical_to.value:.6f}"
+        if self.real_fade is not None and (
+            "RealFade" in self._attr_keys or self.real_fade != 0
+        ):
+            attrs["RealFade"] = f"{self.real_fade:.6f}"
+        if self.real_acceleration is not None and (
+            "RealAcceleration" in self._attr_keys or self.real_acceleration != 0
+        ):
+            attrs["RealAcceleration"] = f"{self.real_acceleration:.6f}"
+        if self.wheel and self.wheel.str_link:
+            attrs["Wheel"] = str(self.wheel.str_link)
+        if self.emitter and self.emitter.str_link:
+            attrs["Emitter"] = str(self.emitter.str_link)
+        if self.filter and self.filter.str_link:
+            attrs["Filter"] = str(self.filter.str_link)
+        if self.color_space and self.color_space.str_link:
+            attrs["ColorSpace"] = str(self.color_space.str_link)
+        if self.gamut and self.gamut.str_link:
+            attrs["Gamut"] = str(self.gamut.str_link)
+        if self.dmx_profile and self.dmx_profile.str_link:
+            attrs["DMXProfile"] = str(self.dmx_profile.str_link)
+        if self.dmx_invert and (
+            "DMXInvert" in self._attr_keys
+            or (
+                self.dmx_invert.value is not None
+                and self.dmx_invert.value != self.dmx_invert._default
+            )
+        ):
+            attrs["DMXInvert"] = str(self.dmx_invert.value)
+        if self.mode_master and self.mode_master.str_link:
+            attrs["ModeMaster"] = str(self.mode_master.str_link)
+        if self.mode_from and (
+            "ModeFrom" in self._attr_keys
+            or self.mode_from.value != 0
+            or self.mode_from.byte_count != 1
+        ):
+            attrs["ModeFrom"] = _dmx_value_str(self.mode_from)
+        if self.mode_to and (
+            "ModeTo" in self._attr_keys
+            or self.mode_to.value != 0
+            or self.mode_to.byte_count != 1
+        ):
+            attrs["ModeTo"] = _dmx_value_str(self.mode_to)
+        if self.min_val is not None and ("Min" in self._attr_keys or self.min_val != 0):
+            attrs["Min"] = f"{self.min_val:.6f}"
+        if self.max_val is not None and ("Max" in self._attr_keys or self.max_val != 0):
+            attrs["Max"] = f"{self.max_val:.6f}"
+        if self.custom_name is not None or "CustomName" in self._attr_keys:
+            attrs["CustomName"] = self.custom_name or ""
+
+        element = Element("ChannelFunction", attrs)
+        for channel_set in self.channel_sets:
+            element.append(channel_set.to_xml())
+        for sub_channel_set in self.sub_channel_sets:
+            element.append(sub_channel_set.to_xml())
+        return element
 
 
 class SubChannelSet(BaseNode):
@@ -1585,6 +2079,18 @@ class SubChannelSet(BaseNode):
             "DMXProfileCollect", xml_node.attrib.get("DMXProfile")
         )
 
+    def to_xml(self):
+        attrs = {}
+        if self.name is not None:
+            attrs["Name"] = str(self.name)
+        attrs["PhysicalFrom"] = str(self.physical_from)
+        attrs["PhysicalTo"] = str(self.physical_to)
+        if self.sub_physical_unit is not None and self.sub_physical_unit.str_link:
+            attrs["SubPhysicalUnit"] = str(self.sub_physical_unit.str_link)
+        if self.dmx_profile is not None and self.dmx_profile.str_link:
+            attrs["DMXProfile"] = str(self.dmx_profile.str_link)
+        return Element("SubChannelSet", attrs)
+
 
 class ChannelSet(BaseNode):
     def __init__(
@@ -1604,6 +2110,7 @@ class ChannelSet(BaseNode):
         self.physical_from = physical_from
         self.physical_to = physical_to
         self.wheel_slot_index = wheel_slot_index
+        self._attr_keys: set = set()
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
@@ -1615,6 +2122,7 @@ class ChannelSet(BaseNode):
         self.physical_from = PhysicalValue(xml_node.attrib.get("PhysicalFrom", None))
         self.physical_to = PhysicalValue(xml_node.attrib.get("PhysicalTo", None))
         self.wheel_slot_index = max(0, int(xml_node.attrib.get("WheelSlotIndex", 0)))
+        self._attr_keys = set(xml_node.attrib.keys())
 
     def __str__(self):
         return f"{self.name}"
@@ -1631,6 +2139,24 @@ class ChannelSet(BaseNode):
             "physical_to": self.physical_to.value,
             "wheel_slot_index": self.wheel_slot_index,
         }
+
+    def to_xml(self):
+        attrs = {}
+        if self.name is not None:
+            attrs["Name"] = str(self.name)
+        attrs["DMXFrom"] = f"{self.dmx_from.value}/{self.dmx_from.byte_count}"
+        if self.physical_from.value is not None and (
+            ("PhysicalFrom" in self._attr_keys)
+            or (not self._attr_keys and self.physical_from.value is not None)
+        ):
+            attrs["PhysicalFrom"] = str(self.physical_from.value)
+        if self.physical_to.value is not None and (
+            ("PhysicalTo" in self._attr_keys)
+            or (not self._attr_keys and self.physical_to.value is not None)
+        ):
+            attrs["PhysicalTo"] = str(self.physical_to.value)
+        attrs["WheelSlotIndex"] = str(self.wheel_slot_index)
+        return Element("ChannelSet", attrs)
 
 
 class Relation(BaseNode):
@@ -1655,6 +2181,18 @@ class Relation(BaseNode):
         self.follower = NodeLink("DMXMode", xml_node.attrib.get("Follower"))
         self.type = RelationType(xml_node.attrib.get("Type"))
 
+    def to_xml(self):
+        attrs = {}
+        if self.name:
+            attrs["Name"] = self.name
+        if self.master and self.master.str_link:
+            attrs["Master"] = str(self.master.str_link)
+        if self.follower and self.follower.str_link:
+            attrs["Follower"] = str(self.follower.str_link)
+        if self.type and self.type.value is not None:
+            attrs["Type"] = str(self.type.value)
+        return Element("Relation", attrs)
+
 
 class FTPreset(BaseNode):
     def __init__(self, *args, **kwargs):
@@ -1666,3 +2204,75 @@ class FTPreset(BaseNode):
 
     def __str__(self):
         return "FTPreset"
+
+
+class FixtureTypeWriter:
+    """Create new or update a GDTF package from an existing FixtureType instance.
+    - Most likely the writer surrounding methods will be slightly changed to improve the exposure of the internals.
+    - If you use/plan to use it, experiment and send your improvements back as a PR.
+    - The creator has to ensure correctness of the data, the library is merely just writing it.
+    """
+
+    def __init__(self, fixture_type: FixtureType):
+        if not hasattr(fixture_type, "_gdtf") or fixture_type._gdtf is None:
+            raise ValueError("FixtureType does not contain parsed GDTF data.")
+        self.fixture_type = fixture_type
+        self.data_version: str = str(fixture_type.data_version)
+        self.xml_root: Element = self.fixture_type.to_xml()
+        self.xml_root.set("DataVersion", self.data_version)
+        self.files_list: List[Tuple[str, str]] = []
+
+    def add_file(self, file_path: Union[str, Path], arcname: Optional[str] = None):
+        """Queue an additional file to be included in the written GDTF archive."""
+        path_obj = Path(file_path)
+        self.files_list.append((str(path_obj), arcname or path_obj.name))
+
+    def _iter_original_files(self):
+        package = self.fixture_type._package
+        close_pkg = False
+
+        if (
+            package is None or getattr(package, "fp", None) is None
+        ) and self.fixture_type.path:
+            package = zipfile.ZipFile(self.fixture_type.path, "r")
+            close_pkg = True
+
+        try:
+            if package is not None:
+                for info in package.infolist():
+                    if info.filename == "description.xml":
+                        continue
+                    yield info.filename, package.read(info.filename)
+        finally:
+            if close_pkg and package is not None:
+                package.close()
+
+    def write_gdtf(self, path: Union[str, Path], data_version: Optional[str] = None):
+        """Write a GDTF archive or plain description.xml."""
+        if data_version is not None:
+            self.data_version = str(data_version)
+        self.xml_root.set("DataVersion", str(self.data_version))
+
+        if sys.version_info >= (3, 9):
+            ElementTree.indent(self.xml_root, space="    ", level=0)
+        xmlstr = ElementTree.tostring(
+            self.xml_root, encoding="UTF-8", xml_declaration=True
+        )
+        xml_bytes = ElementTree.tostring(
+            self.xml_root, encoding="UTF-8", xml_declaration=True
+        )
+        destination = Path(path)
+
+        if destination.suffix.lower() == ".xml":
+            destination.write_bytes(xml_bytes)
+            return
+
+        with zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as pkg:
+            pkg.writestr("description.xml", xml_bytes)
+            for filename, content in self._iter_original_files():
+                pkg.writestr(filename, content)
+            for file_path, arcname in self.files_list:
+                try:
+                    pkg.write(file_path, arcname)
+                except FileNotFoundError:
+                    print(f"File does not exist {file_path}")

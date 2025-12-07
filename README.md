@@ -25,26 +25,11 @@ This library is used for example by [BlenderDMX](https://blenderdmx.eu)
 [![Check links in markdown](https://github.com/open-stage/python-gdtf/actions/workflows/check-links.yaml/badge.svg)](https://github.com/open-stage/python-gdtf/actions/workflows/check-links.yaml)
 ![GitHub Tag](https://img.shields.io/github/v/tag/open-stage/python-gdtf)
 
-## Important changes when updating from 1.0
-
-⚠️  List of DMX Channels provided by dmx\_mode.dmx\_channels is now a complete
-list of all DMX channels calculated by obtaining DMX channels for geometries,
-Geometry References and so on, no need to use the .utils methods anymore.
-
-⚠️  The list of channels as dictionaries can be obtained by
-dmx\_mode.dmx\_channels.as\_dicts(), the "id" has been renamed to "attribute".
-DMX Channel now contains Logical Channels and then Channel Functions. The
-as\_dict() is now also in dmx\_modes, dmx\_mode, dmx\_channels and so on.
-
-⚠️  Many of the .utils package methods have been moved directly to the main part
-of pygdtf. External usage of methods from .utils should not be needed anymore.
-
 See [CHANGELOG](https://github.com/open-stage/python-gdtf/blob/master/CHANGELOG.md) for details.
 
 ## Status
 
-- Reading of most aspects of GDTF 1.2 (DIN SPEC 15800:2022-02) should be covered.
-- Writing is currently not implemented.
+- Reading and Writing of all aspects of GDTF 1.2 (DIN SPEC 15800:2022-02)
 
 ## Installation
 
@@ -67,6 +52,8 @@ uv add pygdtf --pre
 ```
 
 ## Usage
+
+### GDTF files reading
 
 ```python
 # import
@@ -112,6 +99,22 @@ gdtf_fixture.dmx_modes[0].dmx_channels.as_dict()
 'channel_sets': ['', 'Center', '']}, ...
 
 # see the source code for more methods
+```
+
+### Writing a GDTF file
+
+```python
+import pygdtf
+from pathlib import Path
+
+# parse a GDTF file
+fixture = pygdtf.FixtureType("BlenderDMX@LED_PAR_64_RGBW@v0.3.gdtf")
+
+# create writer that reuses the parsed XML tree and embedded resources
+writer = pygdtf.FixtureTypeWriter(fixture)
+
+# write a new GDTF archive (DataVersion can be overridden if desired)
+writer.write_gdtf(Path("BlenderDMX@LED_PAR_64_RGBW@v0.3_roundtrip.gdtf"))
 ```
 
 See [BlenderDMX](https://github.com/open-stage/blender-dmx) and
@@ -167,7 +170,7 @@ please cite it as follows:
   title        = {pyGDTF: Python Library for General Device Type Format},
   author       = {{OpenStage}},
   year         = {2025},
-  version      = {1.3.0},
+  version      = {1.4.0},
   url          = {https://github.com/open-stage/python-gdtf}
 }
 ```

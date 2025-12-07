@@ -24,9 +24,14 @@
 
 from typing import List, Optional
 from xml.etree.ElementTree import Element
+from xml.etree import ElementTree
 
 from .base_node import BaseNode
 from .value import *  # type: ignore
+
+
+def _dmx_value_str(dmx_value: "DmxValue") -> str:
+    return f"{dmx_value.value}/{dmx_value.byte_count}"
 
 
 class Macro(BaseNode):
@@ -59,6 +64,19 @@ class Macro(BaseNode):
                 for i in macro_dmx_collect.findall("MacroDMXStep")
             ]
 
+    def to_xml(self):
+        attrs = {}
+        if self.name:
+            attrs["Name"] = self.name
+        if self.channel_function and self.channel_function.str_link:
+            attrs["ChannelFunction"] = str(self.channel_function.str_link)
+        element = Element("FTMacro", attrs)
+        if getattr(self, "dmx_steps", None):
+            macro_dmx = ElementTree.SubElement(element, "MacroDMX")
+            for step in self.dmx_steps:
+                macro_dmx.append(step.to_xml())
+        return element
+
 
 class MacroDmxStep(BaseNode):
     def __init__(
@@ -81,6 +99,12 @@ class MacroDmxStep(BaseNode):
             MacroDmxValue(xml_node=i) for i in xml_node.findall("MacroDMXValue")
         ]
 
+    def to_xml(self):
+        element = Element("MacroDMXStep", {"Duration": str(self.duration)})
+        for dmx_value in self.dmx_values:
+            element.append(dmx_value.to_xml())
+        return element
+
 
 class MacroDmxValue(BaseNode):
     def __init__(
@@ -99,3 +123,11 @@ class MacroDmxValue(BaseNode):
         self.dmx_channel = NodeLink(
             "DMXChannelCollect", xml_node.attrib.get("DMXChannel")
         )
+
+    def to_xml(self):
+        attrs = {}
+        if self.value is not None:
+            attrs["Value"] = _dmx_value_str(self.value)
+        if self.dmx_channel and self.dmx_channel.str_link:
+            attrs["DMXChannel"] = str(self.dmx_channel.str_link)
+        return Element("MacroDMXValue", attrs)

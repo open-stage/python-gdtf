@@ -37,3 +37,7 @@ class BaseNode:
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         pass
+
+    def to_xml(self, parent: Optional["Element"] = None) -> "Element":
+        """Serialize node to XML; subclasses override."""
+        raise NotImplementedError("to_xml must be implemented by subclasses")

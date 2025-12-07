@@ -93,3 +93,18 @@ class Revision(BaseNode):
             "user_id": self.user_id,
             "modified_by": self.modified_by,
         }
+
+    def to_xml(self, parent: Optional["Element"] = None) -> "Element":
+        attrs = {}
+        if self.text is not None:
+            attrs["Text"] = self.text
+        if self.date is not None:
+            attrs["Date"] = self.date
+        if self.user_id is not None:
+            attrs["UserID"] = str(self.user_id)
+        if self.modified_by is not None:
+            attrs["ModifiedBy"] = self.modified_by
+        el = Element("Revision", attrs)
+        if parent is not None:
+            parent.append(el)
+        return el
