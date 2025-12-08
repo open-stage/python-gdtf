@@ -30,6 +30,7 @@ from xml.etree import ElementTree
 
 import pytest
 import pygdtf
+from pygdtf.utils import regenerate_attribute_definitions
 
 
 def test_create_minimal_gdtf_from_scratch(tmp_path: Path):
@@ -50,31 +51,16 @@ def test_create_minimal_gdtf_from_scratch(tmp_path: Path):
     fixture.can_have_children = "No"
     fixture.ref_ft = ""
 
-    activation_group = pygdtf.ActivationGroup(name="Intensity")
-    feature_group = pygdtf.FeatureGroup(
-        name="Dimmer",
-        pretty="Dimmer",
-        features=[pygdtf.Feature(name="Dimmer")],
-    )
-    dimmer_feature_link = f"{feature_group.name}.{feature_group.features[0].name}"
-    dimmer_attribute = pygdtf.Attribute(
-        name="Dimmer",
-        pretty="Dimmer",
-        activation_group=pygdtf.NodeLink("ActivationGroups", activation_group.name),
-        feature=pygdtf.NodeLink("FeatureGroups", dimmer_feature_link),
-        physical_unit=pygdtf.PhysicalUnit("Percent"),
-    )
-
-    fixture.activation_groups = [activation_group]
-    fixture.feature_groups = [feature_group]
-    fixture.attributes = [dimmer_attribute]
     fixture.color_space = pygdtf.ColorSpace(mode=pygdtf.ColorSpaceMode("sRGB"))
     base_geometry = pygdtf.Geometry(name="Base")
     fixture.geometries = pygdtf.Geometries([base_geometry])
 
+    dimmer_attr_link = pygdtf.NodeLink("Attributes", "Dimmer")
+    custom_attr_link = pygdtf.NodeLink("Attributes", "MyCustomAttr")
+
     dimmer_function = pygdtf.ChannelFunction(
         name="Dimmer",
-        attribute=pygdtf.NodeLink("Attributes", dimmer_attribute.name),
+        attribute=dimmer_attr_link,
         default=pygdtf.DmxValue("0/1"),
         physical_from=pygdtf.PhysicalValue(0.0),
         physical_to=pygdtf.PhysicalValue(1.0),
@@ -82,23 +68,52 @@ def test_create_minimal_gdtf_from_scratch(tmp_path: Path):
     dimmer_function._attr_keys = {"Default"}
 
     logical_channel = pygdtf.LogicalChannel(
-        attribute=pygdtf.NodeLink("Attributes", dimmer_attribute.name),
+        attribute=dimmer_attr_link,
         channel_functions=[dimmer_function],
     )
+    custom_function = pygdtf.ChannelFunction(
+        name="Custom",
+        attribute=custom_attr_link,
+        default=pygdtf.DmxValue("0/1"),
+        physical_from=pygdtf.PhysicalValue(0.0),
+        physical_to=pygdtf.PhysicalValue(1.0),
+    )
+    custom_function._attr_keys = {"Default"}
+    custom_logical_channel = pygdtf.LogicalChannel(
+        attribute=custom_attr_link, channel_functions=[custom_function]
+    )
+    dimmer_initial_fn = f"{base_geometry.name}_{dimmer_attr_link.str_link}.{dimmer_attr_link.str_link}.{dimmer_function.name}"
+    custom_initial_fn = f"{base_geometry.name}_{custom_attr_link.str_link}.{custom_attr_link.str_link}.{custom_function.name}"
     dmx_channel = pygdtf.DmxChannel(
         dmx_break=1,
         offset=[1],
         logical_channels=[logical_channel],
         geometry=base_geometry.name,
+        initial_function=pygdtf.NodeLink("DMXChannel", dimmer_initial_fn),
+        default=None,
+    )
+    custom_dmx_channel = pygdtf.DmxChannel(
+        dmx_break=1,
+        offset=[2],
+        logical_channels=[custom_logical_channel],
+        geometry=base_geometry.name,
+        initial_function=pygdtf.NodeLink("DMXChannel", custom_initial_fn),
         default=None,
     )
     dmx_mode = pygdtf.DmxMode(
         name="Basic",
         geometry=base_geometry.name,
-        _dmx_channels=[dmx_channel],
+        _dmx_channels=[dmx_channel, custom_dmx_channel],
         fixture_type=fixture,
     )
     fixture.dmx_modes = [dmx_mode]
+
+    attr_defs = regenerate_attribute_definitions(fixture)
+    fixture.activation_groups = attr_defs["activation_groups"]
+    fixture.feature_groups = attr_defs["feature_groups"]
+    fixture.attributes = attr_defs["attributes"]
+    # ensure custom attribute is preserved (comes from the channel definition)
+    assert any(attr.name == "MyCustomAttr" for attr in fixture.attributes)
 
     writer = pygdtf.FixtureTypeWriter(fixture)
     gdtf_archive = tmp_path / "scratch.gdtf"
