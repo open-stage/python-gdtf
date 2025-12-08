@@ -160,6 +160,23 @@ uv run pytest
 uv run pytest --mypy -m mypy pygdtf/*py
 ```
 
+## Updating Attribute Definitions
+
+The canonical AttributeDefinitions XML lives at the repo root:
+`AttributeDefinitions.xml`. When the GDTF spec updates that file, regenerate
+the baked Python data module used for zero-IO startup:
+
+```bash
+python3 - <<'PY'
+from pygdtf.utils import attr_loader
+attr_loader.generate_attribute_definitions_module()
+PY
+```
+
+This writes `pygdtf/utils/attribute_definitions_data.py`, which is imported at
+runtime instead of reading the XML. Commit the regenerated module along with
+the updated XML.
+
 ## Citation
 
 If you use this library in your research, publication, or software project,

@@ -27,6 +27,8 @@ import datetime
 from typing import Any, Dict, List, Optional
 
 import pygdtf
+from .attr_loader import generate_attribute_definitions_module
+from .attribute_regenerator import regenerate_attribute_definitions
 
 
 def _get_channels_by_geometry(

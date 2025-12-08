@@ -22,6 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import copy
 import datetime
 import zipfile
 import sys
@@ -40,7 +41,7 @@ from .revisions import *
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.4.0-dev0"
+__version__ = "1.4.0-dev1"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -927,6 +928,8 @@ class Measurement(BaseNode):
         self.luminous_intensity = luminous_intensity
         self.transmission = transmission
         self.interpolation_to = interpolation_to
+        # Tracks which optional/defaulted attributes were explicitly set so we
+        # can re-emit them during serialization without bloating everything else.
         self._attr_keys: set = set()
         super().__init__(*args, **kwargs)
 
@@ -1881,6 +1884,8 @@ class ChannelFunction(BaseNode):
             self.sub_channel_sets = sub_channel_sets
         else:
             self.sub_channel_sets = []
+        # Tracks which optional/defaulted attributes were explicitly set so we
+        # can re-emit them during serialization without bloating everything else.
         self._attr_keys: set = set()
         super().__init__(*args, **kwargs)
 
