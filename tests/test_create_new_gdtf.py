@@ -23,6 +23,7 @@
 # SOFTWARE.
 
 import shutil
+from datetime import datetime
 from pathlib import Path
 import subprocess
 import zipfile
@@ -30,6 +31,7 @@ from xml.etree import ElementTree
 
 import pytest
 import pygdtf
+import uuid as py_uuid
 from pygdtf.utils import regenerate_attribute_definitions
 
 
@@ -44,7 +46,7 @@ def test_create_minimal_gdtf_from_scratch(tmp_path: Path):
     fixture.long_name = "UnitTest Fixture"
     fixture.manufacturer = "UnitTest"
     fixture.description = "Created from scratch in tests"
-    fixture.fixture_type_id = "11111111-2222-3333-4444-555555555555"
+    fixture.fixture_type_id = str(py_uuid.uuid4())
     fixture.thumbnail = ""
     fixture.thumbnail_offset_x = 0
     fixture.thumbnail_offset_y = 0
@@ -82,8 +84,9 @@ def test_create_minimal_gdtf_from_scratch(tmp_path: Path):
     custom_logical_channel = pygdtf.LogicalChannel(
         attribute=custom_attr_link, channel_functions=[custom_function]
     )
-    dimmer_initial_fn = f"{base_geometry.name}_{dimmer_attr_link.str_link}.{dimmer_attr_link.str_link}.{dimmer_function.name}"
-    custom_initial_fn = f"{base_geometry.name}_{custom_attr_link.str_link}.{custom_attr_link.str_link}.{custom_function.name}"
+    dimmer_initial_fn = f"{base_geometry.name}_{logical_channel.attribute}.{dimmer_function.attribute}.{dimmer_function.name}"
+    custom_initial_fn = f"{base_geometry.name}_{custom_logical_channel.attribute}.{custom_function.attribute}.{custom_function.name}"
+
     dmx_channel = pygdtf.DmxChannel(
         dmx_break=1,
         offset=[1],
@@ -115,6 +118,19 @@ def test_create_minimal_gdtf_from_scratch(tmp_path: Path):
     # ensure custom attribute is preserved (comes from the channel definition)
     assert any(attr.name == "MyCustomAttr" for attr in fixture.attributes)
 
+    # revision_date = "2025-01-02T03:04:05" # as string
+    revision_date = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")  # now
+    fixture.revisions = pygdtf.Revisions(
+        [
+            pygdtf.Revision(
+                text="Created in unit test",
+                date=revision_date,
+                user_id=0,
+                modified_by=f"pygdtf {pygdtf.__version__}",
+            )
+        ]
+    )
+
     writer = pygdtf.FixtureTypeWriter(fixture)
     gdtf_archive = tmp_path / "scratch.gdtf"
     writer.write_gdtf(gdtf_archive)
@@ -123,7 +139,6 @@ def test_create_minimal_gdtf_from_scratch(tmp_path: Path):
         description_path = tmp_path / "description.xml"
         description_path.write_bytes(archive.read("description.xml"))
 
-    schema_path = Path(__file__).resolve().parents[2] / "gdtf.xsd"
     schema_path = Path(__file__).resolve().parent / "gdtf.xsd"
     assert schema_path.is_file()
 
