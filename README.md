@@ -110,10 +110,11 @@ from pathlib import Path
 # parse a GDTF file
 fixture = pygdtf.FixtureType("BlenderDMX@LED_PAR_64_RGBW@v0.3.gdtf")
 
-# create writer that reuses the parsed XML tree and embedded resources
+# modify the fixture as needed, you must ensure GDTF correctness
+# create writer
 writer = pygdtf.FixtureTypeWriter(fixture)
 
-# write a new GDTF archive (DataVersion can be overridden if desired)
+# write a new GDTF archive
 writer.write_gdtf(Path("BlenderDMX@LED_PAR_64_RGBW@v0.3_roundtrip.gdtf"))
 ```
 
@@ -162,20 +163,18 @@ uv run pytest --mypy -m mypy pygdtf/*py
 
 ## Updating Attribute Definitions
 
-The canonical AttributeDefinitions XML lives at the repo root:
-`AttributeDefinitions.xml`. When the GDTF spec updates that file, regenerate
-the baked Python data module used for zero-IO startup:
+The canonical AttributeDefinitions XML is from the [GDTF
+Spec](https://github.com/mvrdevelopment/spec), and it is stored at the repo
+root: `AttributeDefinitions.xml`. When the GDTF Spec updates that file, we need
+to regenerate the baked Python data module by running the following:
 
 ```bash
-python3 - <<'PY'
-from pygdtf.utils import attr_loader
-attr_loader.generate_attribute_definitions_module()
-PY
+uv run python -c "from pygdtf.utils import attr_loader; attr_loader.generate_attribute_definitions_module()"
 ```
 
 This writes `pygdtf/utils/attribute_definitions_data.py`, which is imported at
-runtime instead of reading the XML. Commit the regenerated module along with
-the updated XML.
+runtime instead of reading the XML. Format and commit the regenerated module
+along with the updated XML.
 
 ## Citation
 
