@@ -41,7 +41,7 @@ from .revisions import *
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.4.0-dev2"
+__version__ = "1.4.1"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -1568,7 +1568,7 @@ class DmxChannel(BaseNode):
             self.default = DmxValue(default_attr)
             self._has_default_attr = True
         else:
-            self.default = None
+            self.default = DmxValue("0/1")
             self._has_default_attr = False
 
         highlight_node = xml_node.attrib.get("Highlight")
