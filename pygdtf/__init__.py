@@ -734,7 +734,7 @@ class WheelSlot(BaseNode):
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.name = xml_node.attrib.get("Name")
         color_str = xml_node.attrib.get("Color")
-        self.color = ColorCIE(str_repr=color_str) if color_str else None
+        self.color = ColorCIE(str_repr=color_str) if color_str else ColorCIE()
         self.filter = NodeLink("FilterCollect", xml_node.attrib.get("Filter"))
         self.media_file_name = Resource(
             name=xml_node.attrib.get("MediaFileName", ""), extension="png"
@@ -777,7 +777,7 @@ class PrismFacet(BaseNode):
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         color_str = xml_node.attrib.get("Color")
-        self.color = ColorCIE(str_repr=color_str) if color_str else None
+        self.color = ColorCIE(str_repr=color_str) if color_str else ColorCIE()
         self.rotation = Rotation(str_repr=xml_node.attrib.get("Rotation"))
 
     def to_xml(self):
@@ -854,7 +854,8 @@ class Emitter(BaseNode):
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.name = xml_node.attrib.get("Name")
-        self.color = ColorCIE(str_repr=xml_node.attrib.get("Color"))
+        color_str = xml_node.attrib.get("Color")
+        self.color = ColorCIE(str_repr=color_str) if color_str else ColorCIE()
         self.dominant_wave_length = float(xml_node.attrib.get("DominantWaveLength", 0))
         self.diode_part = xml_node.attrib.get("DiodePart")
         self.measurements = [
@@ -897,7 +898,8 @@ class Filter(BaseNode):
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.name = xml_node.attrib.get("Name")
-        self.color = ColorCIE(str_repr=xml_node.attrib.get("Color"))
+        color_str = xml_node.attrib.get("Color")
+        self.color = ColorCIE(str_repr=color_str) if color_str else ColorCIE()
         self.measurements = [
             Measurement(xml_node=i) for i in xml_node.findall("Measurement")
         ]
