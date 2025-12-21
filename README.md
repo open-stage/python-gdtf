@@ -186,7 +186,7 @@ please cite it as follows:
   title        = {pyGDTF: Python Library for General Device Type Format},
   author       = {{OpenStage}},
   year         = {2025},
-  version      = {1.4.0},
+  version      = {1.4.2},
   url          = {https://github.com/open-stage/python-gdtf}
 }
 ```

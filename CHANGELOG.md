@@ -1,5 +1,9 @@
 ### Changelog
 
+### 1.4.2
+
+* Improve GDTF Writer
+
 ### 1.4.1
 
 * Ensure DMXChannel has default value
