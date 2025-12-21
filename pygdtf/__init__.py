@@ -754,7 +754,7 @@ class WheelSlot(BaseNode):
         if self.filter is not None and self.filter.str_link is not None:
             attrs["Filter"] = str(self.filter.str_link)
         if self.media_file_name is not None and self.media_file_name.name is not None:
-            attrs["MediaFileName"] = str(self.media_file_name)
+            attrs["MediaFileName"] = self.media_file_name.name
 
         element = Element("Slot", attrs)
         for facet in self.facets:
