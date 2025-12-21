@@ -58,8 +58,8 @@ class Rdm(BaseNode):
 
     def to_xml(self):
         attrs = {
-            "ManufacturerID": f"{self.manufacturer_id:04X}",
-            "DeviceModelID": f"{self.device_model_id:04X}",
+            "ManufacturerID": f"0x{self.manufacturer_id:X}",
+            "DeviceModelID": f"0x{self.device_model_id:X}",
         }
         element = Element("FTRDM", attrs)
         for sw in getattr(self, "software_versions", []):

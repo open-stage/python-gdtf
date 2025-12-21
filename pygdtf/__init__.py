@@ -624,8 +624,9 @@ class Attribute(BaseNode):
         attrs = {}
         if self.name:
             attrs["Name"] = self.name
-        if self.pretty:
-            attrs["Pretty"] = self.pretty
+        pretty_value = self.pretty if self.pretty is not None else self.name
+        if pretty_value is not None:
+            attrs["Pretty"] = pretty_value
         if self.activation_group and self.activation_group.str_link:
             attrs["ActivationGroup"] = str(self.activation_group.str_link)
         if self.feature and self.feature.str_link:
