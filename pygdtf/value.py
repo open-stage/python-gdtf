@@ -302,7 +302,7 @@ class ColorCIE:
                 self.Y = 100.00
 
     def __str__(self):
-        return f"{self.x}, {self.y}, {self.Y}"
+        return f"{self.x:.6f},{self.y:.6f},{self.Y:.6f}"
 
 
 class Rotation:
