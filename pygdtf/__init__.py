@@ -786,8 +786,7 @@ class PrismFacet(BaseNode):
         if self.color is not None:
             attrs["Color"] = str(self.color)
         if self.rotation is not None:
-            flat_rotation = [str(val) for row in self.rotation.matrix for val in row]
-            attrs["Rotation"] = ",".join(flat_rotation)
+            attrs["Rotation"] = str(self.rotation)
         return Element("Facet", attrs)
 
 

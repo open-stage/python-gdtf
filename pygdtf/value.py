@@ -318,6 +318,12 @@ class Rotation:
             [component[6], component[7], component[8]],
         ]
 
+    def __str__(self):
+        rows = []
+        for row in self.matrix:
+            rows.append("{" + ",".join(f"{val:.6f}" for val in row) + "}")
+        return "".join(rows)
+
 
 class Vector3:
     def __init__(self, str_repr):
