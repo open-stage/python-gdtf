@@ -1,10 +1,14 @@
 ### Changelog
 
-### 1.4.2
+#### 1.4.3
+
+* Add Geometry helpers
+
+#### 1.4.2
 
 * Improve GDTF Writer
 
-### 1.4.1
+#### 1.4.1
 
 * Ensure DMXChannel has default value
 
