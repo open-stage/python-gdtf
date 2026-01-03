@@ -98,6 +98,14 @@ gdtf_fixture.dmx_modes[0].dmx_channels.as_dict()
 128, 'real_fade': 1.833, 'physical_to': 270.0, 'physical_from': -270.0,
 'channel_sets': ['', 'Center', '']}, ...
 
+# get geometry tree with expanded references
+tree = gdtf_fixture.geometries.get_geometry_tree(
+    fixture_type=gdtf_fixture,
+    mode_name="Mode 1 - Standard 16 - bit",
+)
+tree.name
+'Base'
+
 # see the source code for more methods
 ```
 

@@ -22,13 +22,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from typing import List, Optional
+import copy
+from typing import List, Optional, TYPE_CHECKING
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
 from .base_node import BaseNode
 from .dmxbreak import *
 from .value import *  # type: ignore
+
+if TYPE_CHECKING:
+    from . import FixtureType
 
 
 def _matrix_to_str(matrix: "Matrix") -> str:
@@ -41,6 +45,25 @@ def _matrix_to_str(matrix: "Matrix") -> str:
 
 
 class Geometries(list):
+    def _resolve_root_geometry(
+        self,
+        fixture_type: "FixtureType",
+        mode_name: Optional[str] = None,
+        mode_index: Optional[int] = None,
+    ):
+        root_name = None
+        if mode_name is not None:
+            mode = fixture_type.dmx_modes.get_mode_by_name(mode_name)
+            if mode is not None:
+                root_name = mode.geometry
+        elif mode_index is not None and len(fixture_type.dmx_modes) > mode_index:
+            root_name = fixture_type.dmx_modes[mode_index].geometry
+        if root_name is None and len(self):
+            root_name = self[0].name
+        if root_name is None:
+            return None
+        return self.get_geometry_by_name(root_name)
+
     def get_geometry_by_name(self, geometry_name):
         """Operates on the while kinematic chain of the device"""
 
@@ -83,6 +106,103 @@ class Geometries(list):
         matched: List["Geometry"] = []
         iterate_geometries(root_geometry)
         return matched
+
+    def get_geometry_tree(
+        self,
+        fixture_type: "FixtureType",
+        mode_name: Optional[str] = None,
+        mode_index: Optional[int] = None,
+    ):
+        root_geometry = self._resolve_root_geometry(
+            fixture_type,
+            mode_name=mode_name,
+            mode_index=mode_index,
+        )
+        return self._expand_tree(root_geometry, fixture_type)
+
+    def _expand_tree(self, geometry, fixture_type: "FixtureType"):
+        if geometry is None:
+            return None
+        geometry_copy = copy.deepcopy(geometry)
+        children = []
+        for child in self._iter_children(geometry, fixture_type, True):
+            child_copy = self._expand_tree(child, fixture_type)
+            if child_copy is not None:
+                children.append(child_copy)
+        geometry_copy.geometries = Geometries(children)
+        return geometry_copy
+
+    def _resolve_reference(self, geometry, fixture_type: "FixtureType"):
+        if isinstance(geometry, GeometryReference):
+            reference_name = geometry.geometry
+            if reference_name:
+                return fixture_type.geometries.get_geometry_by_name(reference_name)
+        return None
+
+    def _iter_children(self, geometry, fixture_type: "FixtureType", expand_references):
+        if isinstance(geometry, GeometryReference):
+            reference_geometry = self._resolve_reference(geometry, fixture_type)
+            if expand_references and reference_geometry is not None:
+                return getattr(reference_geometry, "geometries", [])
+            return []
+        return getattr(geometry, "geometries", [])
+
+    def iter_tree(self, geometry, fixture_type: "FixtureType", expand_references=True):
+        if geometry is None:
+            return
+        yield geometry
+        for child in self._iter_children(geometry, fixture_type, expand_references):
+            yield from self.iter_tree(child, fixture_type, expand_references)
+
+    def to_list(self, geometry, fixture_type: "FixtureType", expand_references=True):
+        return list(self.iter_tree(geometry, fixture_type, expand_references))
+
+    def as_dict(
+        self,
+        geometry=None,
+        fixture_type: Optional["FixtureType"] = None,
+        mode_name: Optional[str] = None,
+        mode_index: Optional[int] = None,
+    ):
+        if fixture_type is None:
+            raise ValueError("fixture_type is required to build geometry dicts.")
+        if geometry is None:
+            geometry = self._resolve_root_geometry(
+                fixture_type,
+                mode_name=mode_name,
+                mode_index=mode_index,
+            )
+        if geometry is None:
+            return None
+        reference_geometry = self._resolve_reference(geometry, fixture_type)
+        model = geometry.model
+        if model is None and reference_geometry is not None:
+            model = reference_geometry.model
+        data = {
+            "name": geometry.name,
+            "type": type(geometry).__name__,
+            "model": model,
+            "matrix": geometry.position.matrix
+            if hasattr(geometry, "position")
+            else None,
+            "reference": geometry.geometry
+            if isinstance(geometry, GeometryReference)
+            else None,
+        }
+        children = []
+        for child in self._iter_children(
+            geometry,
+            fixture_type,
+            True,
+        ):
+            child_data = self.as_dict(
+                child,
+                fixture_type,
+            )
+            if child_data is not None:
+                children.append(child_data)
+        data["children"] = children
+        return data
 
 
 class Geometry(BaseNode):
