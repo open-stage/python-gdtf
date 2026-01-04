@@ -345,7 +345,8 @@ def calculate_complexity(gdtf_profile: Optional["pygdtf.FixtureType"] = None):
             slot
             for wheel in gdtf_profile.wheels
             for slot in wheel.wheel_slots
-            if slot.media_file_name.name is not None
+            if slot.media_file_name is not None
+            and slot.media_file_name.name is not None
         ]
     )
     facets_count = len(

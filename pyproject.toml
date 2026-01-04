@@ -64,3 +64,6 @@ dev = [
 Repository = "https://github.com/open-stage/python-gdtf.git"
 Changelog = "https://github.com/open-stage/python-gdtf/blob/master/CHANGELOG.md"
 
+[tool.mypy]
+check_untyped_defs = false
+disable_error_code = ["annotation-unchecked"]

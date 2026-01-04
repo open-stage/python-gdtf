@@ -120,6 +120,8 @@ class FixtureType:
             self._package.close()
 
     def _read_xml(self):
+        assert self._gdtf is not None
+        assert self._root is not None
         self.data_version = self._gdtf.get("DataVersion", 1.2)
         self.name = self._root.get("Name")
         self.short_name = self._root.get("ShortName")
@@ -312,7 +314,7 @@ class FixtureType:
         else:
             self.ft_presets = []
 
-        self.protocols = []
+        self.protocols: List[BaseNode] = []
         protocols_collect = self._root.find("Protocols")
         if protocols_collect is not None:
             for i in protocols_collect.findall("FTRDM"):
@@ -1275,7 +1277,7 @@ class DmxChannels(list):
 
     def by_breaks(self, as_dict=False):
         # this is to unflatten the list
-        grouped = {}
+        grouped: Dict[int, List] = {}
 
         for item in self:
             key = item.dmx_break

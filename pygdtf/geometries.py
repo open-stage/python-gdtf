@@ -82,7 +82,7 @@ class Geometries(list):
                 if hasattr(g, "geometries"):
                     iterate_geometries(g)
 
-        matched = []
+        matched: List["Geometry"] = []
         iterate_geometries(self)
         if matched:
             return matched[0]
