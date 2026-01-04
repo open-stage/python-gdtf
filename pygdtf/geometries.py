@@ -118,18 +118,61 @@ class Geometries(list):
             mode_name=mode_name,
             mode_index=mode_index,
         )
-        return self._expand_tree(root_geometry, fixture_type)
+        return self._expand_tree(root_geometry, fixture_type, _visited=set())
 
-    def _expand_tree(self, geometry, fixture_type: "FixtureType"):
+    def _expand_tree(
+        self,
+        geometry,
+        fixture_type: "FixtureType",
+        _visited: Optional[set] = None,
+    ):
         if geometry is None:
             return None
+        if _visited is None:
+            _visited = set()
+        if isinstance(geometry, GeometryReference):
+            reference_geometry = self._resolve_reference(geometry, fixture_type)
+            if reference_geometry is not None:
+                ref_key = (reference_geometry.name, type(reference_geometry))
+                if ref_key in _visited:
+                    return None
+                _visited.add(ref_key)
         geometry_copy = copy.deepcopy(geometry)
-        children = []
-        for child in self._iter_children(geometry, fixture_type, True):
-            child_copy = self._expand_tree(child, fixture_type)
-            if child_copy is not None:
-                children.append(child_copy)
-        geometry_copy.geometries = Geometries(children)
+        if isinstance(geometry, GeometryReference):
+            reference_geometry = self._resolve_reference(geometry, fixture_type)
+            reference_root = None
+            if reference_geometry is not None:
+                try:
+                    reference_root = self._expand_tree(
+                        reference_geometry,
+                        fixture_type,
+                        _visited=_visited,
+                    )
+                finally:
+                    ref_key = (reference_geometry.name, type(reference_geometry))
+                    _visited.discard(ref_key)
+            geometry_copy.reference_root = reference_root
+            geometry_copy.geometries = Geometries(
+                reference_root.geometries if reference_root is not None else [],
+            )
+        else:
+            children = []
+            for child in self._iter_children(geometry, fixture_type, True):
+                child_key = (getattr(child, "name", None), type(child))
+                if child_key in _visited:
+                    continue
+                _visited.add(child_key)
+                try:
+                    child_copy = self._expand_tree(
+                        child,
+                        fixture_type,
+                        _visited=_visited,
+                    )
+                finally:
+                    _visited.discard(child_key)
+                if child_copy is not None:
+                    children.append(child_copy)
+            geometry_copy.geometries = Geometries(children)
         return geometry_copy
 
     def _resolve_reference(self, geometry, fixture_type: "FixtureType"):
@@ -163,6 +206,7 @@ class Geometries(list):
         fixture_type: Optional["FixtureType"] = None,
         mode_name: Optional[str] = None,
         mode_index: Optional[int] = None,
+        _visited: Optional[set] = None,
     ):
         if fixture_type is None:
             raise ValueError("fixture_type is required to build geometry dicts.")
@@ -178,9 +222,36 @@ class Geometries(list):
         model = geometry.model
         if model is None and reference_geometry is not None:
             model = reference_geometry.model
+
+        def _collect_types(node) -> List[str]:
+            types: List[str] = []
+            if node is None:
+                return types
+            types.append(type(node).__name__)
+            for child in self._iter_children(node, fixture_type, True):
+                types.extend(_collect_types(child))
+            return types
+
+        contains_types = sorted(set(_collect_types(geometry)))
+        reference_contains_types = (
+            sorted(set(_collect_types(reference_geometry)))
+            if reference_geometry is not None
+            else []
+        )
+        resolved_type = (
+            type(reference_geometry).__name__
+            if reference_geometry is not None
+            else type(geometry).__name__
+        )
         data = {
             "name": geometry.name,
             "type": type(geometry).__name__,
+            "resolved_type": resolved_type,
+            "reference_type": type(reference_geometry).__name__
+            if reference_geometry is not None
+            else None,
+            "contains_types": contains_types,
+            "reference_contains_types": reference_contains_types,
             "model": model,
             "matrix": geometry.position.matrix
             if hasattr(geometry, "position")
@@ -189,16 +260,38 @@ class Geometries(list):
             if isinstance(geometry, GeometryReference)
             else None,
         }
+        if _visited is None:
+            _visited = set()
+        if isinstance(geometry, GeometryReference) and reference_geometry is not None:
+            ref_key = (reference_geometry.name, type(reference_geometry).__name__)
+            if ref_key not in _visited:
+                _visited.add(ref_key)
+                try:
+                    data["reference_data"] = self.as_dict(
+                        reference_geometry,
+                        fixture_type,
+                        _visited=_visited,
+                    )
+                finally:
+                    _visited.discard(ref_key)
         children = []
         for child in self._iter_children(
             geometry,
             fixture_type,
             True,
         ):
-            child_data = self.as_dict(
-                child,
-                fixture_type,
-            )
+            child_key = (getattr(child, "name", None), type(child).__name__)
+            if child_key in _visited:
+                continue
+            _visited.add(child_key)
+            try:
+                child_data = self.as_dict(
+                    child,
+                    fixture_type,
+                    _visited=_visited,
+                )
+            finally:
+                _visited.discard(child_key)
             if child_data is not None:
                 children.append(child_data)
         data["children"] = children
