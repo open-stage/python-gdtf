@@ -219,8 +219,8 @@ def _create_break_channel(offset, channel, geometry, offset_index):
         "dmx": offset,
         "offset": channel.offset,
         "attribute": "+" * offset_index + str(channel.logical_channels[0].attribute),
-        "default": channel.default.get_value(fine=offset_index > 0),
-        "highlight": channel.highlight.get_value()
+        "default": channel.default.get_value(full=True),
+        "highlight": channel.highlight.get_value(full=True)
         if channel.highlight is not None
         else None,
         "geometry": geometry.name,

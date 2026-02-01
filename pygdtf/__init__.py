@@ -41,7 +41,7 @@ from .revisions import *
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.4.3"
+__version__ = "1.4.4-dev5"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -1696,8 +1696,8 @@ class DmxChannel(BaseNode):
                         "dmx": offset_value,
                         "offset": self.offset,
                         "attribute": self.attribute.str_link,
-                        "default": self.default.get_value(),
-                        "highlight": self.highlight.get_value()
+                        "default": self.default.get_value(full=True),
+                        "highlight": self.highlight.get_value(full=True)
                         if self.highlight is not None
                         else None,
                         "geometry": self.geometry,
@@ -1715,7 +1715,7 @@ class DmxChannel(BaseNode):
                         "offset": self.offset,
                         "attribute": "+" * idx + self.attribute.str_link,
                         "geometry": self.geometry,
-                        "default": self.default.get_value(fine=True),
+                        "default": self.default.get_value(full=True),
                     }
                 )
         return dicts_list
@@ -1951,9 +1951,9 @@ class ChannelFunction(BaseNode):
         return {
             "name": self.name,
             "attribute": self.attribute.str_link,
-            "dmx_from": self.dmx_from.get_value(),
-            "dmx_to": self.dmx_to.get_value(),
-            "default": self.default.get_value(),
+            "dmx_from": self.dmx_from.get_value(full=True),
+            "dmx_to": self.dmx_to.get_value(full=True),
+            "default": self.default.get_value(full=True),
             "real_fade": self.real_fade,
             "physical_to": self.physical_to.value,
             "physical_from": self.physical_from.value,
@@ -2142,8 +2142,8 @@ class ChannelSet(BaseNode):
     def as_dict(self):
         return {
             "name": self.name,
-            "dmx_from": self.dmx_from.get_value(),
-            "dmx_to": self.dmx_to.get_value(),
+            "dmx_from": self.dmx_from.get_value(full=True),
+            "dmx_to": self.dmx_to.get_value(full=True),
             "physical_from": self.physical_from.value,
             "physical_to": self.physical_to.value,
             "wheel_slot_index": self.wheel_slot_index,

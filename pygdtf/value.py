@@ -252,16 +252,26 @@ class DmxValue:
     def __repr__(self):
         return f"Value: {self.value}, Byte count: {self.byte_count}"
 
-    def get_value(self, fine=False):
+    def _get_byte(self, byte_index):
+        if self.byte_count <= 0:
+            return 0
+        if byte_index < 0 or byte_index >= self.byte_count:
+            return 0
+        shift = (self.byte_count - 1 - byte_index) * 8
+        return (self.value >> shift) & 0xFF
+
+    def get_value(self, fine=False, byte_index=None, full=False, components=False):
         if self.byte_count == 1:
             return self.value
-
-        msb = (self.value >> 8) & 0xFF
-        lsb = self.value & 0xFF
-
-        if not fine:
-            return msb
-        return lsb
+        if full:
+            return self.value
+        if components:
+            return [self._get_byte(i) for i in range(self.byte_count)]
+        if byte_index is not None:
+            return self._get_byte(byte_index)
+        if fine:
+            return self._get_byte(self.byte_count - 1)
+        return self._get_byte(0)
 
 
 class PhysicalValue:
