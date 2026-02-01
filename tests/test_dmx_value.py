@@ -37,5 +37,10 @@ def test_dmx_channel_as_dict_byte_defaults():
         ],
     )
     result = channel.as_dict()
-    assert [entry["default"] for entry in result] == [16909060, 16909060, 16909060, 16909060]
+    assert [entry["default"] for entry in result] == [
+        16909060,
+        16909060,
+        16909060,
+        16909060,
+    ]
     assert result[0]["highlight"] == 84281096
