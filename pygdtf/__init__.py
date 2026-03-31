@@ -26,6 +26,7 @@ import copy
 import datetime
 import zipfile
 import sys
+from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 from xml.etree import ElementTree
@@ -66,6 +67,22 @@ COLOR_SPACE_ANSI = ColorSpaceDefinition(
 
 def _dmx_value_str(dmx_value: "DmxValue") -> str:
     return f"{dmx_value.value}/{dmx_value.byte_count}"
+
+
+def _channel_function_container_key(
+    channel_function: "ChannelFunction",
+) -> Tuple[Optional[str], int, int, int, int]:
+    mode_master = None
+    if channel_function.mode_master and channel_function.mode_master.str_link:
+        mode_master = str(channel_function.mode_master.str_link)
+
+    return (
+        mode_master,
+        channel_function.mode_from.value,
+        channel_function.mode_from.byte_count,
+        channel_function.mode_to.value,
+        channel_function.mode_to.byte_count,
+    )
 
 
 def _find_root(pkg: "zipfile.ZipFile") -> "Element":
@@ -1654,72 +1671,81 @@ class DmxChannel(BaseNode):
 
         # calculate dmx_to in channel functions
         for logical_channel in self.logical_channels:
-            previous_function_dmx_from = None
-            for channel_function in sorted(
-                logical_channel.channel_functions,
-                key=lambda channel_function: channel_function.dmx_from.value,
-                reverse=True,
-            ):
-                if self.offset is None:
-                    byte_count = channel_function.dmx_from.byte_count
-                else:
-                    byte_count = len(self.offset)
+            function_containers: Dict[
+                Tuple[Optional[str], int, int, int, int], List["ChannelFunction"]
+            ] = defaultdict(list)
+            for channel_function in logical_channel.channel_functions:
+                function_containers[
+                    _channel_function_container_key(channel_function)
+                ].append(channel_function)
 
-                if previous_function_dmx_from is None:
-                    # set max value
-                    channel_function.dmx_to = DmxValue("0/1")
-                    channel_function.dmx_to.value = (1 << (byte_count * 8)) - 1
-                    channel_function.dmx_to.byte_count = byte_count
-                    previous_function_dmx_from = channel_function.dmx_from
-                    if channel_function.dmx_from.value == 0:
-                        # reset in case of mode masters
-                        previous_function_dmx_from = None
-                else:
-                    # set value of the previous dmx_from -1
-                    channel_function.dmx_to = copy.deepcopy(previous_function_dmx_from)
-                    channel_function.dmx_to.value -= 1
-                    previous_function_dmx_from = channel_function.dmx_from
-
-                previous_set_dmx_from = None
-                for channel_set in sorted(
-                    channel_function.channel_sets,
-                    key=lambda channel_set: channel_set.dmx_from.value,
+            for channel_functions in function_containers.values():
+                previous_function_dmx_from = None
+                for channel_function in sorted(
+                    channel_functions,
+                    key=lambda channel_function: channel_function.dmx_from.value,
                     reverse=True,
                 ):
                     if self.offset is None:
-                        byte_count = channel_set.dmx_from.byte_count
+                        byte_count = channel_function.dmx_from.byte_count
                     else:
                         byte_count = len(self.offset)
 
-                    if previous_set_dmx_from is None:
-                        # set max value
-                        channel_set.dmx_to = DmxValue("0/1")
-                        channel_set.dmx_to.value = channel_function.dmx_to.value
-                        channel_set.dmx_to.byte_count = byte_count
-                        previous_set_dmx_from = channel_set.dmx_from
+                    if previous_function_dmx_from is None:
+                        # set max value within this mode-master container
+                        channel_function.dmx_to = DmxValue("0/1")
+                        channel_function.dmx_to.value = (1 << (byte_count * 8)) - 1
+                        channel_function.dmx_to.byte_count = byte_count
                     else:
                         # set value of the previous dmx_from -1
-                        channel_set.dmx_to = copy.deepcopy(previous_set_dmx_from)
-                        channel_set.dmx_to.value -= 1
-                        previous_set_dmx_from = channel_set.dmx_from
-                    #
-                    if channel_set.physical_from.value is None:
-                        channel_set.physical_from = PhysicalValue(
-                            dmx_to_physical(
-                                channel_set.dmx_from.value,
-                                channel_element=channel_function,
-                            )
+                        channel_function.dmx_to = copy.deepcopy(
+                            previous_function_dmx_from
                         )
-                        channel_set.physical_from.source = PhysicalSource("Function")
+                        channel_function.dmx_to.value -= 1
+                    previous_function_dmx_from = channel_function.dmx_from
 
-                    if channel_set.physical_to.value is None:
-                        channel_set.physical_to = PhysicalValue(
-                            dmx_to_physical(
-                                channel_set.dmx_to.value,
-                                channel_element=channel_function,
+                    previous_set_dmx_from = None
+                    for channel_set in sorted(
+                        channel_function.channel_sets,
+                        key=lambda channel_set: channel_set.dmx_from.value,
+                        reverse=True,
+                    ):
+                        if self.offset is None:
+                            byte_count = channel_set.dmx_from.byte_count
+                        else:
+                            byte_count = len(self.offset)
+
+                        if previous_set_dmx_from is None:
+                            # set max value
+                            channel_set.dmx_to = DmxValue("0/1")
+                            channel_set.dmx_to.value = channel_function.dmx_to.value
+                            channel_set.dmx_to.byte_count = byte_count
+                            previous_set_dmx_from = channel_set.dmx_from
+                        else:
+                            # set value of the previous dmx_from -1
+                            channel_set.dmx_to = copy.deepcopy(previous_set_dmx_from)
+                            channel_set.dmx_to.value -= 1
+                            previous_set_dmx_from = channel_set.dmx_from
+                        #
+                        if channel_set.physical_from.value is None:
+                            channel_set.physical_from = PhysicalValue(
+                                dmx_to_physical(
+                                    channel_set.dmx_from.value,
+                                    channel_element=channel_function,
+                                )
                             )
-                        )
-                        channel_set.physical_to.source = PhysicalSource("Function")
+                            channel_set.physical_from.source = PhysicalSource(
+                                "Function"
+                            )
+
+                        if channel_set.physical_to.value is None:
+                            channel_set.physical_to = PhysicalValue(
+                                dmx_to_physical(
+                                    channel_set.dmx_to.value,
+                                    channel_element=channel_function,
+                                )
+                            )
+                            channel_set.physical_to.source = PhysicalSource("Function")
 
     def __str__(self):
         return f"{self.name} ({self.offset})"
