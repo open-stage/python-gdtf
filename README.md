@@ -193,8 +193,8 @@ please cite it as follows:
 @software{pygdtf2025,
   title        = {pyGDTF: Python Library for General Device Type Format},
   author       = {{OpenStage}},
-  year         = {2025},
-  version      = {1.4.2},
+  year         = {2026},
+  version      = {1.4.5},
   url          = {https://github.com/open-stage/python-gdtf}
 }
 ```

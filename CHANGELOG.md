@@ -1,5 +1,15 @@
 ### Changelog
 
+#### 1.4.5
+
+* Improve channel function parsing: take mode masters more into consideration
+* Better initialization of FixtureType fields
+
+#### 1.4.4
+
+* Handle correctly 32bit channels
+* Improve geometry helper
+
 #### 1.4.3
 
 * Add Geometry helpers
