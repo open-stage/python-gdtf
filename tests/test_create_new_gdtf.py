@@ -27,7 +27,6 @@ from datetime import datetime
 from pathlib import Path
 import subprocess
 import zipfile
-from xml.etree import ElementTree
 
 import pytest
 import pygdtf
@@ -37,8 +36,6 @@ from pygdtf.utils import regenerate_attribute_definitions
 
 def test_create_minimal_gdtf_from_scratch(tmp_path: Path):
     fixture = pygdtf.FixtureType()
-    fixture._gdtf = ElementTree.Element("GDTF")
-    fixture._root = ElementTree.SubElement(fixture._gdtf, "FixtureType")
 
     fixture.data_version = "1.2"
     fixture.name = "UnitTest Fixture"
@@ -54,6 +51,16 @@ def test_create_minimal_gdtf_from_scratch(tmp_path: Path):
     fixture.ref_ft = ""
 
     fixture.color_space = pygdtf.ColorSpace(mode=pygdtf.ColorSpaceMode("sRGB"))
+    fixture.cri_groups = [
+        pygdtf.CriGroup(
+            color_temperature=6000,
+            cris=[
+                pygdtf.Cri(ces=pygdtf.Ces("CES01"), color_rendering_index=98),
+                pygdtf.Cri(ces=pygdtf.Ces("CES02"), color_rendering_index=96),
+                pygdtf.Cri(ces=pygdtf.Ces("CES03"), color_rendering_index=94),
+            ],
+        )
+    ]
     base_geometry = pygdtf.Geometry(name="Base")
     fixture.geometries = pygdtf.Geometries([base_geometry])
 
@@ -134,6 +141,18 @@ def test_create_minimal_gdtf_from_scratch(tmp_path: Path):
     writer = pygdtf.FixtureTypeWriter(fixture)
     gdtf_archive = tmp_path / "scratch.gdtf"
     writer.write_gdtf(gdtf_archive)
+
+    with pygdtf.FixtureType(gdtf_archive) as parsed_fixture:
+        assert len(parsed_fixture.cri_groups) == 1
+        assert parsed_fixture.cri_groups[0].color_temperature == 6000
+        assert [cri.ces.value for cri in parsed_fixture.cri_groups[0].cris] == [
+            "CES01",
+            "CES02",
+            "CES03",
+        ]
+        assert [
+            cri.color_rendering_index for cri in parsed_fixture.cri_groups[0].cris
+        ] == [98, 96, 94]
 
     with zipfile.ZipFile(gdtf_archive) as archive:
         description_path = tmp_path / "description.xml"

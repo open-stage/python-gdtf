@@ -101,6 +101,7 @@ class FixtureType:
         self._root = None
         self.path = path
         self.dsc_file = dsc_file
+        self._initialize_empty_fixture()
         if path is not None:
             self._package = zipfile.ZipFile(path, "r")
         if self._package is not None:
@@ -111,6 +112,40 @@ class FixtureType:
             self._root = self._gdtf.find("FixtureType")
         if self._root is not None:
             self._read_xml()
+
+    def _initialize_empty_fixture(self):
+        """Set safe defaults for a new in-memory fixture."""
+        self._gdtf = None
+        self.data_version = "1.2"
+        self.name = None
+        self.short_name = None
+        self.long_name = None
+        self.manufacturer = None
+        self.description = None
+        self.fixture_type_id = None
+        self.thumbnail = ""
+        self.thumbnail_offset_x = 0
+        self.thumbnail_offset_y = 0
+        self.can_have_children = "No"
+        self.ref_ft = ""
+        self.activation_groups = []
+        self.feature_groups = []
+        self.attributes = []
+        self.wheels = []
+        self.emitters = []
+        self.filters = []
+        self.color_space = ColorSpace(mode=ColorSpaceMode("sRGB"))
+        self.additional_color_spaces = []
+        self.gamuts = []
+        self.dmx_profiles = []
+        self.cri_groups = []
+        self.properties = None
+        self.models = []
+        self.geometries = []
+        self.dmx_modes = []
+        self.revisions = []
+        self.ft_presets = []
+        self.protocols = []
 
     def __enter__(self):
         return self
@@ -1169,21 +1204,27 @@ class CriGroup(BaseNode):
 
 class Cri(BaseNode):
     def __init__(
-        self, ces: "Ces" = Ces(None), color_temperature: int = 100, *args, **kwargs
+        self,
+        ces: "Ces" = Ces(None),
+        color_rendering_index: int = 100,
+        *args,
+        **kwargs,
     ):
         self.ces = ces
-        self.color_temperature = color_temperature
+        self.color_rendering_index = color_rendering_index
         super().__init__(*args, **kwargs)
 
     def _read_xml(self, xml_node: "Element", xml_parent: Optional["Element"] = None):
         self.ces = Ces(xml_node.attrib.get("CES"))
-        self.color_temperature = int(xml_node.attrib.get("ColorTemperature", 100))
+        self.color_rendering_index = int(
+            xml_node.attrib.get("ColorRenderingIndex", 100)
+        )
 
     def to_xml(self):
         attrs = {}
         if self.ces is not None and self.ces.value is not None:
             attrs["CES"] = str(self.ces.value)
-        attrs["ColorTemperature"] = str(self.color_temperature)
+        attrs["ColorRenderingIndex"] = str(self.color_rendering_index)
         return Element("CRI", attrs)
 
 
@@ -2223,8 +2264,6 @@ class FixtureTypeWriter:
     """
 
     def __init__(self, fixture_type: FixtureType):
-        if not hasattr(fixture_type, "_gdtf") or fixture_type._gdtf is None:
-            raise ValueError("FixtureType does not contain parsed GDTF data.")
         self.fixture_type = fixture_type
         self.data_version: str = str(fixture_type.data_version)
         self.xml_root: Element = self.fixture_type.to_xml()
