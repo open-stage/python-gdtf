@@ -42,7 +42,7 @@ from .revisions import *
 from .utils import *
 from .value import *  # type: ignore
 
-__version__ = "1.4.5"
+__version__ = "1.4.6"
 
 # Standard predefined colour spaces: R, G, B, W-P
 COLOR_SPACE_SRGB = ColorSpaceDefinition(
@@ -1179,9 +1179,22 @@ class Gamut(BaseNode):
         self.name = xml_node.attrib.get("Name")
         points_str = xml_node.attrib.get("Points")
         if points_str:
-            points_arr = points_str.split(";")
+            normalized = points_str.strip()
+
+            if "}{" in normalized:
+                points_arr = (
+                    normalized.replace("}{", ";")
+                    .replace("{", "")
+                    .replace("}", "")
+                    .split(";")
+                )
+            else:
+                points_arr = normalized.split(";")
+
             for p in points_arr:
-                self.points.append(ColorCIE(str_repr=p))
+                point = p.strip()
+                if point:
+                    self.points.append(ColorCIE(str_repr=point))
 
     def to_xml(self):
         attrs = {}
