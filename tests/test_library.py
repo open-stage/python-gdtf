@@ -24,6 +24,7 @@
 
 from pathlib import Path
 import json
+import pygdtf
 
 
 def test_version(gdtf_fixture):
@@ -36,6 +37,16 @@ def test_name(gdtf_fixture):
     """Name of the fixture should be as defined"""
 
     assert gdtf_fixture.name == "LED PAR 64 RGBW"
+
+
+def test_predefined_color_spaces_expose_uniform_fields():
+    for mode_name in ("sRGB", "ProPhoto", "ANSI"):
+        color_space = pygdtf.ColorSpace(mode=pygdtf.ColorSpaceMode(mode_name))
+
+        assert hasattr(color_space, "red")
+        assert hasattr(color_space, "green")
+        assert hasattr(color_space, "blue")
+        assert hasattr(color_space, "white_point")
 
 
 def test_dmx_channel_count(gdtf_fixture, pygdtf_module):

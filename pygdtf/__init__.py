@@ -1057,7 +1057,7 @@ class ColorSpace(BaseNode):
         self.name = name
         self.mode = mode
         if definition is not None:
-            self.definition = definition
+            self._apply_definition(definition)
         else:
             self._match_definition()
         super().__init__(*args, **kwargs)
@@ -1073,17 +1073,23 @@ class ColorSpace(BaseNode):
         else:
             self._match_definition()
 
+    def _apply_definition(self, definition: "ColorSpaceDefinition"):
+        self.red = definition.r
+        self.green = definition.g
+        self.blue = definition.b
+        self.white_point = definition.w
+
     def _match_definition(self):
-        # Match the name of the color space mode with a color space definition,
-        # this will only work for sRGB, ProPhoto and ANSI modes
+        # Hydrate predefined modes into the same public fields used by custom
+        # spaces so callers can consume a uniform API shape.
         if self.mode is None or str(self.mode) == "Custom":
             return
         elif str(self.mode) == "sRGB":
-            self.definition = COLOR_SPACE_SRGB
+            self._apply_definition(COLOR_SPACE_SRGB)
         elif str(self.mode) == "ProPhoto":
-            self.definition = COLOR_SPACE_PROPHOTO
+            self._apply_definition(COLOR_SPACE_PROPHOTO)
         elif str(self.mode) == "ANSI":
-            self.definition = COLOR_SPACE_ANSI
+            self._apply_definition(COLOR_SPACE_ANSI)
 
     def to_xml(self):
         attrs = {}
