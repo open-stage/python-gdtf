@@ -1003,7 +1003,9 @@ class Measurement(BaseNode):
         attrs = {}
         if self.physical is not None:
             attrs["Physical"] = f"{self.physical:.6f}"
-        if self.luminous_intensity is not None:
+        if self.luminous_intensity is not None and (
+            "LuminousIntensity" in self._attr_keys or self.luminous_intensity != 0
+        ):
             attrs["LuminousIntensity"] = f"{self.luminous_intensity:.6f}"
         if self.transmission is not None and (
             "Transmission" in self._attr_keys or self.transmission != 0
