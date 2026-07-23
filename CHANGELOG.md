@@ -164,7 +164,6 @@ having to use the .utils package. See more details below.
 
 ```python
 modes_info = gdtf_fixture.dmx_modes.as_dict()
-
 ```
 
 ##### .utils.get\_geometry\_by\_name
@@ -176,7 +175,7 @@ gdtf_fixture.geometries.get_geometry_by_name("geometry name")
 ##### .utils.get\_geometry\_by\_type
 
 ```python
-#this is a static method and requires a root_geometry
+# this is a static method and requires a root_geometry
 gdtf_fixture.geometries.get_geometry_by_type(geometry_root, geometry_type)
 ```
 
