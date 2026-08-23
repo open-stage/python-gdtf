@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (C) 2020 Hugo Aboud, Jack Page, Marvin, vanous
+# Copyright (C) 2020 Jack Page, Marvin, vanous
 #
 # This file is part of pygdtf.
 #
