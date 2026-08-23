@@ -22,23 +22,26 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-headerPath = "mit-header.txt"
+[header]
+path = "mit-header.txt"
 
+[files]
 excludes = [
-    # Test files
     ".github/",
+    ".github/**",
+    "**/*.md",
+    ".gitignore",
+    "LICENSE",
     "*.xml",
     "*.gdtf",
     "*.lock",
     "gdtf.xsd",
-
 ]
 
 [git]
-attrs = 'auto'
+file_attrs = 'auto'
 ignore = 'auto'
 
-[properties]
-inceptionYear = 2020
-projectName = "pygdtf"
-
+[props]
+inception_year = 2020
+project_name = "pygdtf"
